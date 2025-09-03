@@ -68,9 +68,82 @@ button.secondary{background:transparent;color:var(--muted);border:1px solid rgba
 .proc-item{display:flex;align-items:center;justify-content:space-between;padding:6px;border-radius:8px;margin:6px 0;background:rgba(255,255,255,0.01)}
 .proc-item .meta{color:var(--muted);font-size:13px}
 
-.gantt{display:flex;align-items:flex-end;height:72px;border-radius:6px;padding:6px;overflow:auto;background:linear-gradient(180deg,#031024,#071229)}
-.gantt .seg{height:44px;display:flex;align-items:center;justify-content:center;color:#042033;font-weight:700;border-radius:4px;margin-right:4px;background:var(--accent-2);min-width:6px}
-.time-markers{display:flex;gap:4px;margin-top:8px;color:var(--muted);font-size:13px;overflow:auto;padding-left:6px}
+.controls {
+  margin: 15px 0;
+}
+
+button.reset {
+  background-color: #d9534f;
+  color: white;
+  margin-left: 10px;
+  padding: 6px 12px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+button.reset:hover {
+  background-color: #c9302c;
+}
+
+/* Gantt improvements */
+#gantt {
+  display: flex;
+  align-items: flex-end;
+  margin-top: 20px;
+}
+
+.gantt-block {
+  position: relative;
+  border: 1px solid #333;
+  margin-right: 2px;
+  text-align: center;
+  background-color: lightblue;
+  border-radius: 5px;
+}
+
+.gantt-block div {
+  padding: 10px;
+}
+
+.time-marker {
+  position: absolute;
+  bottom: -20px;
+  font-size: 12px;
+}
+
+.time-marker.end {
+  right: 0;
+}
+
+#gantt {
+  display: flex;
+  align-items: flex-end;
+  margin-top: 20px;
+}
+
+.gantt-block {
+  position: relative;
+  border: 1px solid #333;
+  margin-right: 2px;
+  text-align: center;
+  background-color: lightblue;
+  border-radius: 5px;
+}
+
+.gantt-block div {
+  padding: 10px;
+}
+
+.time-marker {
+  position: absolute;
+  bottom: -20px;
+  font-size: 12px;
+}
+
+.time-marker.end {
+  right: 0;
+}
 
 #stats table{width:100%;border-collapse:collapse;color:var(--muted)}
 #stats th,#stats td{padding:8px;border-bottom:1px dashed rgba(255,255,255,0.02);font-size:13px;text-align:left}
