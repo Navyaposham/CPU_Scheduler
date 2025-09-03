@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>CPU Scheduling Visualizer</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="top">
+    <h1>CPU Scheduling Visualizer</h1>
+    <p class="sub">FCFS · SJF (non-preemptive) · SJF (preemptive / SRTF) · Round Robin · Priority</p>
+  </header>
+
+  <main class="wrap">
+    <section class="left">
+      <div class="card">
+        <h2>Add Process</h2>
+        <form id="procForm">
+          <div class="row">
+            <label>Id / Name</label>
+            <input id="pName" type="text" placeholder="A" maxlength="2" required />
+          </div>
+          <div class="row">
+            <label>Arrival</label>
+            <input id="pArrival" type="number" min="0" value="0" required />
+          </div>
+          <div class="row">
+            <label>Burst</label>
+            <input id="pBurst" type="number" min="1" value="1" required />
+          </div>
+          <div class="row">
+            <label>Priority</label>
+            <input id="pPriority" type="number" min="0" value="0" required />
+          </div>
+          <div class="actions">
+            <button type="submit">Add Process</button>
+            <button type="button" id="addSample">Add Sample</button>
+            <button type="button" id="clearAll">Clear</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="card">
+        <h2>Configure & Run</h2>
+        <div class="row">
+          <label>Algorithm</label>
+          <select id="algorithm">
+            <option value="fcfs">FCFS (First-Come)</option>
+            <option value="sjf-np">SJF - non-preemptive</option>
+            <option value="srtf">SJF - preemptive (SRTF)</option>
+            <option value="rr">Round Robin</option>
+            <option value="priority">Priority (non-preemptive)</option>
+          </select>
+        </div>
+        <div id="quantumRow" class="row hidden">
+          <label>Quantum</label>
+          <input id="quantum" type="number" min="1" value="2" />
+        </div>
+        <div class="actions">
+          <button id="runBtn">Run</button>
+          <button id="exportBtn">Download .json</button>
+        </div>
+        <p class="hint">Tip: priority lower number = higher priority.</p>
+      </div>
+
+      <div class="card">
+        <h2>Processes</h2>
+        <div id="procList" class="proc-list"></div>
+      </div>
+    </section>
+
+    <section class="right">
+      <div class="card">
+        <h2>Gantt Chart</h2>
+        <div id="ganttWrap">
+          <div id="gantt" class="gantt"></div>
+        </div>
+        <div id="timeMarkers" class="time-markers"></div>
+      </div>
+
+      <div class="card">
+        <h2>Statistics</h2>
+        <div id="stats"></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <small>Made for visualizing CPU scheduling. Deploy on GitHub Pages: push these files and enable Pages in repo settings.</small>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
