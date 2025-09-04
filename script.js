@@ -180,28 +180,94 @@ function runScheduler(algo, quantum) {
 }
 
 // Render Gantt
+// replace existing renderGantt/drawGanttChart with this
 function renderGantt(timeline) {
-  const gantt = document.getElementById("gantt");
-  const markers = document.getElementById("timeMarkers");
-  gantt.innerHTML = "";
-  markers.innerHTML = "";
+  const ganttEl = document.getElementById('gantt');
+  const timeMarkersEl = document.getElementById('timeMarkers');
+  ganttEl.innerHTML = '';
+  timeMarkersEl.innerHTML = '';
 
-  timeline.forEach(seg => {
-    const div = document.createElement("div");
-    div.className = "seg";
-    div.style.width = (seg.end - seg.start)*40 + "px";
-    div.textContent = seg.id;
-    gantt.appendChild(div);
+  if (!timeline || timeline.length === 0) return;
+
+  // compute scale so chart fits nicely
+  const start = Math.min(...timeline.map(s => s.start));
+  const end = Math.max(...timeline.map(s => s.end));
+  const total = Math.max(1, end - start);
+  const minPxPerUnit = 30;        // minimum px per time unit
+  const maxChartWidth = 1000;     // max width baseline
+  const scale = Math.max(minPxPerUnit, maxChartWidth / total);
+
+  // Build wrappers: each wrapper contains the colored bar + its time marker row
+  timeline.forEach((seg, idx) => {
+    const segWidth = Math.max(6, Math.round((seg.end - seg.start) * scale));
+
+    // wrapper: vertical stack (bar on top, marker below)
+    const wrapper = document.createElement('div');
+    wrapper.className = 'gantt-item';
+    wrapper.style.width = segWidth + 'px';
+    wrapper.style.display = 'inline-flex';
+    wrapper.style.flexDirection = 'column';
+    wrapper.style.alignItems = 'stretch';
+    wrapper.style.marginRight = '2px';
+
+    // bar (colored block)
+    const bar = document.createElement('div');
+    bar.className = `gantt-block ${seg.name.toLowerCase()}`;
+    bar.style.width = '100%';
+    bar.style.height = '44px';
+    bar.style.display = 'flex';
+    bar.style.alignItems = 'center';
+    bar.style.justifyContent = 'center';
+    bar.style.fontWeight = '700';
+    bar.style.color = '#042033';
+    bar.style.background = colorFor(seg.name);
+    bar.textContent = seg.name;
+    wrapper.appendChild(bar);
+
+    // marker row (relative positioned so we can place start & end inside)
+    const markerRow = document.createElement('div');
+    markerRow.className = 'gantt-marker-row';
+    markerRow.style.width = '100%';
+    markerRow.style.height = '20px';
+    markerRow.style.position = 'relative';
+    markerRow.style.fontSize = '12px';
+    markerRow.style.color = getComputedStyle(document.documentElement).getPropertyValue('--muted') || '#9fb0c8';
+
+    // start label (left)
+    const startLabel = document.createElement('span');
+    startLabel.className = 'marker-start';
+    startLabel.style.position = 'absolute';
+    startLabel.style.left = '4px';
+    startLabel.style.top = '0';
+    startLabel.textContent = seg.start;
+    markerRow.appendChild(startLabel);
+
+    // end label (only show on last segment so it aligns to the right edge)
+    if (idx === timeline.length - 1) {
+      const endLabel = document.createElement('span');
+      endLabel.className = 'marker-end';
+      endLabel.style.position = 'absolute';
+      endLabel.style.right = '4px';
+      endLabel.style.top = '0';
+      endLabel.textContent = seg.end;
+      markerRow.appendChild(endLabel);
+    }
+
+    wrapper.appendChild(markerRow);
+    ganttEl.appendChild(wrapper);
   });
 
-  timeline.forEach((seg, i) => {
-    const mark = document.createElement("div");
-    mark.className = "time-marker";
-    mark.style.width = (seg.end - seg.start)*40 + "px";
-    mark.textContent = (i === 0 ? seg.start+" | "+seg.end : seg.end);
-    markers.appendChild(mark);
-  });
+  // Optional: if you still want separate overall ticks (0,1,2...) you can generate them:
+  // (commented out — the per-bar markers above align more precisely)
+  // for (let t = start; t <= end; t++) {
+  //   const tick = document.createElement('div');
+  //   tick.className = 'time-tick';
+  //   tick.style.minWidth = Math.max(6, Math.round(scale)) + 'px';
+  //   tick.textContent = t;
+  //   timeMarkersEl.appendChild(tick);
+  // }
 }
+
 
 // Render stats
 function renderStats(procs) {
