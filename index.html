@@ -59,10 +59,10 @@
         </div>
         <div class="actions">
           <button id="runBtn">Run</button>
-          <button id="resetBtn" class="reset">Reset</button>
           <button id="exportBtn">Download .json</button>
+          <button id="resetBtn" class="reset">Reset</button>
         </div>
-        <p class="hint">Tip: lower number = higher priority.</p>
+        <p class="hint">Tip: priority lower number = higher priority.</p>
       </div>
 
       <div class="card">
@@ -83,8 +83,6 @@
       <div class="card">
         <h2>Statistics</h2>
         <div id="stats"></div>
-        <!-- chart.js bar chart -->
-        <canvas id="chartCanvas"></canvas>
       </div>
     </section>
   </main>
@@ -93,8 +91,6 @@
     <small>Made for visualizing CPU scheduling. Deploy on GitHub Pages: push these files and enable Pages in repo settings.</small>
   </footer>
 
-  <!-- Chart.js for graphs -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
