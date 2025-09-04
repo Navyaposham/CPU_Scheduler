@@ -87,62 +87,28 @@ button.reset:hover {
 }
 
 /* Gantt improvements */
-#gantt {
+.gantt {
   display: flex;
-  align-items: flex-end;
-  margin-top: 20px;
+  margin-top: 10px;
 }
 
 .gantt-block {
   position: relative;
   border: 1px solid #333;
-  margin-right: 2px;
   text-align: center;
-  background-color: lightblue;
   border-radius: 5px;
+  padding: 10px 0;
+  font-weight: bold;
 }
 
-.gantt-block div {
-  padding: 10px;
-}
-
-.time-marker {
-  position: absolute;
-  bottom: -20px;
-  font-size: 12px;
-}
-
-.time-marker.end {
-  right: 0;
-}
-
-#gantt {
+.time-markers {
   display: flex;
-  align-items: flex-end;
-  margin-top: 20px;
-}
-
-.gantt-block {
-  position: relative;
-  border: 1px solid #333;
-  margin-right: 2px;
-  text-align: center;
-  background-color: lightblue;
-  border-radius: 5px;
-}
-
-.gantt-block div {
-  padding: 10px;
+  margin-top: 5px;
 }
 
 .time-marker {
-  position: absolute;
-  bottom: -20px;
+  text-align: left;
   font-size: 12px;
-}
-
-.time-marker.end {
-  right: 0;
 }
 
 #stats table{width:100%;border-collapse:collapse;color:var(--muted)}
