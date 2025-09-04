@@ -16,7 +16,6 @@ body{
   background: radial-gradient(1200px 600px at 20% -10%, #162045 0%, #0b1020 55%);
   color: var(--text);
 }
-
 header{ padding: 28px 20px 10px; text-align:center }
 h1{margin:0 0 6px; font-size: clamp(20px, 3vw, 30px)}
 .sub{color:var(--muted); font-size:14px}
