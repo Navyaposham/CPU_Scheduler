@@ -9,7 +9,7 @@
 <body>
   <header>
     <h1>CPU Scheduling Visualizer</h1>
-    <div class="sub">FCFS • SJF • Round Robin • Priority • SRTF — with Gantt Chart & full metrics</div>
+    <div class="sub">FCFS • SJF • Round Robin • Priority • SRTF</div>
   </header>
 
   <div class="container">
@@ -55,7 +55,7 @@
     <div class="grid" style="margin-top:12px">
       <div class="card">
         <h2>Processes</h2>
-        <div class="hint">Enter <strong>PID</strong>, <strong>Arrival</strong>, <strong>Burst</strong>, and <strong>Priority</strong>.</div>
+        <div class="hint">Enter <strong>Arrival Time</strong>, <strong>Burst Time</strong>, and <strong>Priority</strong>.</div>
         <div style="overflow:auto; max-height: 360px; margin-top:10px">
           <table id="ptable">
             <thead>
@@ -72,19 +72,6 @@
           </table>
         </div>
       </div>
-
-      <div class="card">
-        <h2>Metrics</h2>
-        <div class="metrics" id="metrics">
-          <div class="kpi"><div class="mini">Avg Completion Time</div><div class="v" id="avgCT">—</div></div>
-          <div class="kpi"><div class="mini">Avg Turnaround Time</div><div class="v" id="avgTAT">—</div></div>
-          <div class="kpi"><div class="mini">Avg Waiting Time</div><div class="v" id="avgWT">—</div></div>
-          <div class="kpi"><div class="mini">Throughput (jobs/unit)</div><div class="v" id="throughput">—</div></div>
-        </div>
-        <div id="err" class="error" style="margin-top:8px"></div>
-        <div class="legend" id="legend" style="margin-top:12px"></div>
-      </div>
-    </div>
 
     <div class="card" style="margin-top:12px">
       <h2>Gantt Chart</h2>
@@ -117,6 +104,18 @@
       </div>
     </div>
   </div>
+<div class="card">
+        <h2>Metrics</h2>
+        <div class="metrics" id="metrics">
+          <div class="kpi"><div class="mini">Avg Completion Time</div><div class="v" id="avgCT">—</div></div>
+          <div class="kpi"><div class="mini">Avg Turnaround Time</div><div class="v" id="avgTAT">—</div></div>
+          <div class="kpi"><div class="mini">Avg Waiting Time</div><div class="v" id="avgWT">—</div></div>
+          <div class="kpi"><div class="mini">Throughput (jobs/unit)</div><div class="v" id="throughput">—</div></div>
+        </div>
+        <div id="err" class="error" style="margin-top:8px"></div>
+        <div class="legend" id="legend" style="margin-top:12px"></div>
+      </div>
+    </div>
 
 </body>
   <script src="script.js"></script>
