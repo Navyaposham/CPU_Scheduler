@@ -19,13 +19,13 @@ document.addEventListener("DOMContentLoaded", () => {
       const at = Number(tr.querySelector('.at').value);
       const bt = Number(tr.querySelector('.bt').value);
       const pr = Number(tr.querySelector('.pr').value);
-      const color = tr.querySelector('.color').value;
       if(!pid) throw new Error('PID missing in one of the rows.');
       if(seenPIDs.has(pid)) throw new Error(`Duplicate PID: ${pid}`);
       if(!(Number.isFinite(at) && at >= 0)) throw new Error(`Invalid arrival for ${pid}`);
       if(!(Number.isFinite(bt) && bt > 0)) throw new Error(`Invalid burst for ${pid}`);
       if(!Number.isFinite(pr)) throw new Error(`Invalid priority for ${pid}`);
       seenPIDs.add(pid);
+      const color = genColor(i, rows.length);
       procs.push({ pid, arrival: at, burst: bt, priority: pr, color });
     }
     return procs.sort((a,b)=> a.arrival - b.arrival || a.pid.localeCompare(b.pid));
