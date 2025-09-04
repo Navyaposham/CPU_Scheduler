@@ -1,95 +1,78 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>CPU Scheduling Visualizer</title>
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <header class="top">
+  <div class="container">
     <h1>CPU Scheduling Visualizer</h1>
-    <p class="sub">FCFS · SJF · RRS (Round Robin) · Priority · SRTF</p>
-  </header>
 
-  <main class="wrap">
-    <section class="left">
-      <div class="card">
-        <h2>Add Process</h2>
-        <form id="procForm" autocomplete="off">
-          <div class="row">
-            <label for="pId">Process ID</label>
-            <input id="pId" type="text" placeholder="P1" maxlength="6" required />
-          </div>
-          <div class="row">
-            <label for="pArrival">Arrival</label>
-            <input id="pArrival" type="number" min="0" value="0" required />
-          </div>
-          <div class="row">
-            <label for="pBurst">Burst</label>
-            <input id="pBurst" type="number" min="1" value="1" required />
-          </div>
-          <div class="row">
-            <label for="pPriority">Priority</label>
-            <input id="pPriority" type="number" min="0" value="0" required />
-          </div>
-          <div class="actions">
-            <button type="submit" id="addBtn">Add Process</button>
-            <button type="button" id="resetBtn" class="reset">Reset All</button>
-          </div>
-        </form>
+    <!-- Process Input Form -->
+    <form id="processForm">
+      <label>Process ID:</label>
+      <input type="text" id="pid" required>
+      <label>Arrival Time:</label>
+      <input type="number" id="arrival" min="0" required>
+      <label>Burst Time:</label>
+      <input type="number" id="burst" min="1" required>
+      <label>Priority (lower = higher priority):</label>
+      <input type="number" id="priority" min="1" required>
+      <button type="submit">Add Process</button>
+    </form>
+
+    <!-- Algorithm Selection -->
+    <div class="algorithm-select">
+      <label for="algorithm">Select Algorithm:</label>
+      <select id="algorithm">
+        <option value="FCFS">FCFS (First Come First Serve)</option>
+        <option value="SJF">SJF (Shortest Job First)</option>
+        <option value="SRTF">SRTF (Shortest Remaining Time First)</option>
+        <option value="RR">Round Robin</option>
+        <option value="PRIORITY">Priority Scheduling</option>
+      </select>
+      <label for="quantum">Quantum (for RR):</label>
+      <input type="number" id="quantum" min="1" value="2">
+      <button id="runBtn">Run</button>
+    </div>
+
+    <!-- Results Table -->
+    <div class="results">
+      <h2>Detailed Results</h2>
+      <table id="resultsTable">
+        <thead>
+          <tr>
+            <th>PID</th>
+            <th>AT</th>
+            <th>BT</th>
+            <th>CT</th>
+            <th>TAT</th>
+            <th>WT</th>
+            <th>RT</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+
+      <!-- Metrics -->
+      <div class="metrics">
+        <h3>Metrics</h3>
+        <p id="avgCT">Average Completion Time: </p>
+        <p id="avgTAT">Average Turnaround Time: </p>
+        <p id="avgWT">Average Waiting Time: </p>
+        <p id="avgRT">Average Response Time: </p>
       </div>
+    </div>
 
-      <div class="card">
-        <h2>Configure & Run</h2>
-        <div class="row">
-          <label>Algorithm</label>
-          <select id="algorithm">
-            <option value="fcfs">FCFS</option>
-            <option value="sjf-np">SJF (non-preemptive)</option>
-            <option value="srtf">SRTF (preemptive)</option>
-            <option value="rr">RRS (Round Robin)</option>
-            <option value="priority">Priority (non-preemptive)</option>
-          </select>
-        </div>
-        <div id="quantumRow" class="row hidden">
-          <label>Quantum</label>
-          <input id="quantum" type="number" min="1" value="2" />
-        </div>
-        <div class="actions">
-          <button id="runBtn">Visualize</button>
-          <button id="clearListBtn" class="secondary">Clear List</button>
-        </div>
-      </div>
+    <!-- Gantt Chart -->
+    <div class="gantt">
+      <h2>Gantt Chart</h2>
+      <div id="ganttChart"></div>
+    </div>
+  </div>
 
-      <div class="card">
-        <h2>Processes</h2>
-        <div id="procList" class="proc-list"></div>
-      </div>
-    </section>
-
-    <section class="right">
-      <div class="card">
-        <h2>Gantt Chart</h2>
-        <div id="ganttWrap">
-          <div id="gantt" class="gantt" aria-hidden="false"></div>
-        </div>
-      </div>
-
-      <div class="card">
-        <h2>Statistics & Graph</h2>
-        <div id="stats"></div>
-        <canvas id="chartCanvas"></canvas>
-      </div>
-    </section>
-  </main>
-
-  <footer class="foot">
-    <small>CPU Scheduling Visualizer — CT/TAT/WT/RT + Gantt</small>
-  </footer>
-
-  <!-- Chart.js -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.3.0/dist/chart.umd.min.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
