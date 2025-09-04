@@ -10,26 +10,28 @@ document.addEventListener("DOMContentLoaded", () => {
     return `hsl(${hue} 70% 60%)`;
   }
 
-  function readProcesses(){
-    const rows = $$('#ptable tbody tr');
-    const seenPIDs = new Set();
-    const procs = [];
-    for(const tr of rows){
-      const pid = tr.querySelector('.pid').value.trim();
-      const at = Number(tr.querySelector('.at').value);
-      const bt = Number(tr.querySelector('.bt').value);
-      const pr = Number(tr.querySelector('.pr').value);
-      if(!pid) throw new Error('PID missing in one of the rows.');
-      if(seenPIDs.has(pid)) throw new Error(`Duplicate PID: ${pid}`);
-      if(!(Number.isFinite(at) && at >= 0)) throw new Error(`Invalid arrival for ${pid}`);
-      if(!(Number.isFinite(bt) && bt > 0)) throw new Error(`Invalid burst for ${pid}`);
-      if(!Number.isFinite(pr)) throw new Error(`Invalid priority for ${pid}`);
-      seenPIDs.add(pid);
-      const color = genColor(i, rows.length);
-      procs.push({ pid, arrival: at, burst: bt, priority: pr, color });
-    }
-    return procs.sort((a,b)=> a.arrival - b.arrival || a.pid.localeCompare(b.pid));
+function readProcesses(){
+  const rows = $$('#ptable tbody tr');
+  const seenPIDs = new Set();
+  const procs = [];
+  for(const [i, tr] of rows.entries()){
+    const pid = tr.querySelector('.pid').value.trim();
+    const at = Number(tr.querySelector('.at').value);
+    const bt = Number(tr.querySelector('.bt').value);
+    const pr = Number(tr.querySelector('.pr').value);
+    if(!pid) throw new Error('PID missing in one of the rows.');
+    if(seenPIDs.has(pid)) throw new Error(`Duplicate PID: ${pid}`);
+    if(!(Number.isFinite(at) && at >= 0)) throw new Error(`Invalid arrival for ${pid}`);
+    if(!(Number.isFinite(bt) && bt > 0)) throw new Error(`Invalid burst for ${pid}`);
+    if(!Number.isFinite(pr)) throw new Error(`Invalid priority for ${pid}`);
+    seenPIDs.add(pid);
+    // Generate color automatically instead of reading a .color input
+    const color = genColor(i, rows.length);
+    procs.push({ pid, arrival: at, burst: bt, priority: pr, color });
   }
+  return procs.sort((a,b)=> a.arrival - b.arrival || a.pid.localeCompare(b.pid));
+}
+
 
   function renderLegend(procs){
     const leg = $('#legend');
