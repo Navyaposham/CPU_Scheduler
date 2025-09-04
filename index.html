@@ -30,22 +30,10 @@
           <label>Time Quantum (RR only)</label>
           <input type="number" id="quantum" min="1" value="2" />
         </div>
-        <div class="field">
-          <label>&nbsp;</label>
-          <button id="compute">Compute Schedule</button>
-        </div>
-        <div class="field">
-          <label>&nbsp;</label>
-          <button class="ghost" id="addRow">Add Process</button>
-        </div>
-        <div class="field">
-          <label>&nbsp;</label>
-          <button class="ghost" id="seed">Seed Sample</button>
-        </div>
-        <div class="field">
-          <label>&nbsp;</label>
-          <button class="ghost" id="reset">Reset</button>
-        </div>
+        <div class="field"><button id="compute">Compute Schedule</button></div>
+        <div class="field"><button class="ghost" id="addRow">Add Process</button></div>
+        <div class="field"><button class="ghost" id="seed">Seed Sample</button></div>
+        <div class="field"><button class="ghost" id="reset">Reset</button></div>
         <div class="tag">
           <span class="mini">Scale:</span> <strong id="scaleLabel">20</strong><span class="mini">px/unit</span>
           <input type="range" id="scale" min="8" max="40" value="20" style="width:160px; accent-color:#6aa6ff; margin-left:10px;"/>
@@ -74,7 +62,7 @@
       </div>
     </div>
 
-    <!-- Metrics -->
+    <!-- Metrics (stacked) -->
     <div class="card" style="margin-top:12px">
       <h2>Metrics</h2>
       <div class="metrics" id="metrics">
@@ -87,7 +75,7 @@
       <div class="legend" id="legend" style="margin-top:12px"></div>
     </div>
 
-    <!-- Gantt Chart -->
+    <!-- Gantt Chart (stacked) -->
     <div class="card" style="margin-top:12px">
       <h2>Gantt Chart</h2>
       <div class="gantt-wrap">
@@ -97,7 +85,7 @@
       <div class="hint" style="margin-top:8px">Blocks are proportional to time. Timestamps appear at block boundaries.</div>
     </div>
 
-    <!-- Detailed Results -->
+    <!-- Detailed Results (stacked) -->
     <div class="card" style="margin-top:12px">
       <h2>Detailed Results</h2>
       <div style="overflow:auto">
