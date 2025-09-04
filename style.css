@@ -64,23 +64,25 @@ button.reset:hover {
 /* Gantt Chart Improvements */
 .gantt {
   display: flex;
-  align-items: flex-end;
-  margin-top: 20px;
+  margin-top: 10px;
 }
 
 .gantt-block {
   position: relative;
   border: 1px solid #333;
-  margin-right: 2px;
   text-align: center;
   border-radius: 5px;
-  padding: 10px;
+  padding: 10px 0;
+  font-weight: bold;
 }
 
 .time-markers {
   display: flex;
-  justify-content: space-between;
   margin-top: 5px;
+}
+
+.time-marker {
+  text-align: left;
   font-size: 12px;
 }
 
