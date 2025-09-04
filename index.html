@@ -9,7 +9,7 @@
 <body>
   <header class="top">
     <h1>CPU Scheduling Visualizer</h1>
-    <p class="sub">FCFS · SJF (non-preemptive) · SJF (preemptive / SRTF) · Round Robin · Priority</p>
+    <p class="sub">FCFS · SJF (NP) · SRTF · Round Robin · Priority</p>
   </header>
 
   <main class="wrap">
@@ -35,7 +35,6 @@
           </div>
           <div class="actions">
             <button type="submit">Add Process</button>
-            <button type="button" id="addSample">Add Sample</button>
             <button type="button" id="clearAll">Clear</button>
           </div>
         </form>
@@ -59,10 +58,8 @@
         </div>
         <div class="actions">
           <button id="runBtn">Run</button>
-          <button id="exportBtn">Download .json</button>
           <button id="resetBtn" class="reset">Reset</button>
         </div>
-        <p class="hint">Tip: priority lower number = higher priority.</p>
       </div>
 
       <div class="card">
@@ -76,8 +73,8 @@
         <h2>Gantt Chart</h2>
         <div id="ganttWrap">
           <div id="gantt" class="gantt"></div>
+          <div id="timeMarkers" class="time-markers"></div>
         </div>
-        <div id="timeMarkers" class="time-markers"></div>
       </div>
 
       <div class="card">
@@ -88,7 +85,7 @@
   </main>
 
   <footer class="foot">
-    <small>Made for visualizing CPU scheduling. Deploy on GitHub Pages: push these files and enable Pages in repo settings.</small>
+    <small>Made for visualizing CPU scheduling</small>
   </footer>
 
   <script src="script.js"></script>
