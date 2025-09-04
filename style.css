@@ -1,77 +1,35 @@
 body {
-  font-family: Arial, sans-serif;
-  background: #f4f6f9;
-  margin: 0;
-  padding: 20px;
+    font-family: Arial, sans-serif;
+    margin: 30px;
+    background: #f9f9f9;
 }
-
-.container {
-  max-width: 1000px;
-  margin: auto;
-  background: #fff;
-  padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+#controls, #output {
+    background: #fff;
+    padding: 18px;
+    border-radius: 8px;
+    margin-bottom: 25px;
+    box-shadow: 0 1px 6px rgba(60,60,60,0.09);
 }
-
-h1, h2 {
-  text-align: center;
-}
-
-form, .algorithm-select {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-  justify-content: center;
-  margin-bottom: 20px;
-}
-
-input, select, button {
-  padding: 6px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-}
-
-button {
-  background: #007bff;
-  color: white;
-  cursor: pointer;
-}
-button:hover {
-  background: #0056b3;
-}
-
+label { margin-right: 5px; }
+input, select { margin: 4px 10px 4px 0; }
 table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-bottom: 20px;
+    border-collapse: collapse;
+    width: 100%;
 }
-
-table th, table td {
-  border: 1px solid #ccc;
-  padding: 8px;
-  text-align: center;
+table, th, td {
+    border: 1px solid #ccc;
 }
-
-#ganttChart {
-  display: flex;
-  align-items: flex-end;
-  margin-top: 20px;
+th, td {
+    padding: 8px 6px;
+    text-align: center;
 }
-
-.gantt-block {
-  padding: 10px;
-  margin: 2px;
-  color: #fff;
-  border-radius: 4px;
-  text-align: center;
-  position: relative;
-}
-
-.gantt-time {
-  position: absolute;
-  bottom: -20px;
-  left: 0;
-  font-size: 12px;
-  color: #000;
-}
+.process-row { background-color: #e2eefc; }
+.process-fcfs { background: #d6f5d6; }
+.process-sjf { background: #fee4b6; }
+.process-priority { background: #ffd6f5; }
+.process-srtf { background: #d6e3ff; }
+.process-rr { background: #fff9c4; }
+.highlight { font-weight: bold; color: #24a19c; }
+#gantt { border: 1px solid #333; margin-top: 12px; }
+#avg-chart { border: 1px solid #888; margin-top: 12px; }
+button { padding: 5px 15px; margin: 5px 0; border-radius: 4px; }
