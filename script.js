@@ -1,430 +1,459 @@
-/* script.js - algorithms + UI glue
-   Supports:
-   - FCFS
-   - SJF non-preemptive
-   - SRTF (SJF preemptive)
-   - Round Robin
-   - Priority (non-preemptive)
+/* script.js - full implementation for 5 algorithms
+   - Unique IDs enforced
+   - FCFS, SJF (NP), SRTF, RRS (RR), Priority (NP)
+   - Gantt chart with aligned timestamps
+   - Stats: CT, TAT, WT, RT, indicator, Avg CT, Avg TAT
+   - Chart.js graph for CT/TAT/WT/RT
 */
 
-(() => {
-  // UI elements
-  const procForm = document.getElementById('procForm');
-  const pName = document.getElementById('pName');
-  const pArrival = document.getElementById('pArrival');
-  const pBurst = document.getElementById('pBurst');
-  const pPriority = document.getElementById('pPriority');
-  const procListEl = document.getElementById('procList');
-  const algorithmEl = document.getElementById('algorithm');
-  const quantumRow = document.getElementById('quantumRow');
-  const quantumEl = document.getElementById('quantum');
-  const runBtn = document.getElementById('runBtn');
-  const addSample = document.getElementById('addSample');
-  const clearAll = document.getElementById('clearAll');
-  const ganttEl = document.getElementById('gantt');
-  const timeMarkersEl = document.getElementById('timeMarkers');
-  const statsEl = document.getElementById('stats');
-  const exportBtn = document.getElementById('exportBtn');
+const procForm = document.getElementById('procForm');
+const procListEl = document.getElementById('procList');
+const algorithmEl = document.getElementById('algorithm');
+const quantumRow = document.getElementById('quantumRow');
+const quantumEl = document.getElementById('quantum');
+const runBtn = document.getElementById('runBtn');
+const resetBtn = document.getElementById('resetBtn');
+const clearListBtn = document.getElementById('clearListBtn');
 
-  let processes = [];
+const ganttEl = document.getElementById('gantt');
+const timeMarkersEl = document.getElementById('timeMarkers');
+const statsEl = document.getElementById('stats');
+const chartCanvas = document.getElementById('chartCanvas');
 
-  function uid() {
-    return Math.random().toString(36).slice(2, 7).toUpperCase();
-  }
+let processes = []; // { id, arrival, burst, priority }
+let colorMap = {};
+let chartInstance = null;
+const PX_PER_UNIT = 48; // px per time unit (scale)
 
-  // Render processes
-  function renderProcs() {
-    procListEl.innerHTML = '';
-    processes.forEach((p, i) => {
-      const div = document.createElement('div');
-      div.className = 'proc-item';
-      div.innerHTML = `<div>
-          <strong>${p.name}</strong>
-          <div class="meta">Arr: ${p.arrival} &nbsp; Burst: ${p.burst} &nbsp; Pri: ${p.priority}</div>
-        </div>
-        <div>
-          <button data-i="${i}" class="delBtn secondary">Delete</button>
-        </div>`;
-      procListEl.appendChild(div);
-    });
-    procListEl.querySelectorAll('.delBtn').forEach(b => {
-      b.addEventListener('click', e => {
-        const i = +e.target.dataset.i;
-        processes.splice(i, 1);
-        renderProcs();
-      });
-    });
-  }
-
-  // Add sample processes
-  addSample.addEventListener('click', () => {
-    processes = [
-      { name: 'A', arrival: 0, burst: 5, priority: 2 },
-      { name: 'B', arrival: 1, burst: 3, priority: 1 },
-      { name: 'C', arrival: 2, burst: 8, priority: 3 },
-      { name: 'D', arrival: 3, burst: 6, priority: 2 }
-    ];
-    renderProcs();
-  });
-
-  clearAll.addEventListener('click', () => {
-    processes = [];
-    renderProcs();
-    clearOutput();
-  });
-
-  procForm.addEventListener('submit', e => {
-    e.preventDefault();
-    const name = pName.value.trim() || uid();
-    const arrival = Math.max(0, parseInt(pArrival.value, 10) || 0);
-    const burst = Math.max(1, parseInt(pBurst.value, 10) || 1);
-    const priority = parseInt(pPriority.value, 10) || 0;
-    processes.push({ name: name.toString(), arrival, burst, priority });
-    pName.value = '';
-    pArrival.value = '0';
-    pBurst.value = '1';
-    pPriority.value = '0';
-    renderProcs();
-  });
-
-  algorithmEl.addEventListener('change', () => {
-    quantumRow.classList.toggle('hidden', algorithmEl.value !== 'rr');
-  });
-
-  // Export current processes to JSON
-  exportBtn.addEventListener('click', () => {
-    const data = JSON.stringify(processes, null, 2);
-    const blob = new Blob([data], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'processes.json';
-    a.click();
-    URL.revokeObjectURL(url);
-  });
-
-  runBtn.addEventListener('click', () => {
-    if (!processes.length) {
-      alert('Add at least one process first.');
-      return;
-    }
-    const alg = algorithmEl.value;
-    const q = Math.max(1, parseInt(quantumEl.value, 10) || 1);
-    // deep copy processes to avoid mutation
-    const procs = processes.map(p => ({
-      name: p.name,
-      arrival: Number(p.arrival),
-      burst: Number(p.burst),
-      priority: Number(p.priority)
-    }));
-    let result;
-    if (alg === 'fcfs') result = runFCFS(procs);
-    else if (alg === 'sjf-np') result = runSJFNonPreemptive(procs);
-    else if (alg === 'srtf') result = runSRTF(procs);
-    else if (alg === 'rr') result = runRR(procs, q);
-    else if (alg === 'priority') result = runPriorityNonPreemptive(procs);
-    else result = { gantt: [], procs: [] };
-
-    renderGantt(result.gantt);
-    renderStats(result.procs);
-  });
-
-  // Clear output
-  function clearOutput() {
-    ganttEl.innerHTML = '';
-    timeMarkersEl.innerHTML = '';
-    statsEl.innerHTML = '';
-  }
-
-  // Rendering gantt chart
-  function renderGantt(gantt) {
-    ganttEl.innerHTML = '';
-    timeMarkersEl.innerHTML = '';
-    if (!gantt || !gantt.length) return;
-    // compute timeline length
-    const start = Math.min(...gantt.map(s => s.start));
-    const end = Math.max(...gantt.map(s => s.end));
-    const total = end - start || 1;
-    // choose scale
-    const scale = Math.max(30, 600 / total); // px per unit time (bounded)
-    gantt.forEach(seg => {
-      const w = (seg.end - seg.start) * scale;
-      const div = document.createElement('div');
-      div.className = 'seg';
-      div.style.width = (w < 6 ? 6 : w) + 'px';
-      div.style.background = colorFor(seg.name);
-      div.title = `${seg.name} [${seg.start} → ${seg.end}]`;
-      div.textContent = seg.name;
-      ganttEl.appendChild(div);
-    });
-    // time markers
-    for (let t = start; t <= end; t++) {
-      const m = document.createElement('div');
-      m.style.minWidth = '24px';
-      m.style.textAlign = 'left';
-      m.textContent = t;
-      timeMarkersEl.appendChild(m);
-    }
-  }
-
-  // color generator for names
-  const colorMap = {};
-  function colorFor(name) {
-    if (colorMap[name]) return colorMap[name];
-    const hues = [200, 160, 280, 40, 320, 200, 120, 10];
-    const h = hues[Object.keys(colorMap).length % hues.length];
-    const color = `hsl(${h} 70% 70%)`;
-    colorMap[name] = color;
-    return color;
-  }
-
-  // Render statistics table
-  function renderStats(procArr) {
-    if (!procArr || !procArr.length) {
-      statsEl.innerHTML = '';
-      return;
-    }
-    // table with completion, turnaround, waiting
-    const lines = [];
-    lines.push('<table>');
-    lines.push('<thead><tr><th>Process</th><th>Arrival</th><th>Burst</th><th>Completion</th><th>Turnaround</th><th>Waiting</th></tr></thead>');
-    lines.push('<tbody>');
-    let totalTurn = 0, totalWait = 0;
-    procArr.forEach(p => {
-      const tat = p.completion - p.arrival;
-      const wait = tat - p.burst;
-      totalTurn += tat;
-      totalWait += wait;
-      lines.push(`<tr><td>${p.name}</td><td>${p.arrival}</td><td>${p.burst}</td><td>${p.completion}</td><td>${tat}</td><td>${wait}</td></tr>`);
-    });
-    const avgT = (totalTurn / procArr.length).toFixed(2);
-    const avgW = (totalWait / procArr.length).toFixed(2);
-    lines.push('</tbody></table>');
-    lines.push(`<p style="margin-top:10px;color:var(--muted)">Average Turnaround: <strong style="color:var(--white)">${avgT}</strong> · Average Waiting: <strong style="color:var(--white)">${avgW}</strong></p>`);
-    statsEl.innerHTML = lines.join('');
-  }
-
-  /********************
-   * Algorithms
-   ********************/
-
-  // Utility: sort by arrival, then name
-  function byArrival(a,b){ return a.arrival - b.arrival || (a.name > b.name ? 1 : -1); }
-
-  // FCFS (non-preemptive)
-  function runFCFS(procs) {
-    procs.sort(byArrival);
-    const gantt = [];
-    let time = 0;
-    procs.forEach(p => {
-      if (time < p.arrival) time = p.arrival;
-      const start = time;
-      const end = time + p.burst;
-      gantt.push({ name: p.name, start, end });
-      p.completion = end;
-      time = end;
-    });
-    return { gantt, procs };
-  }
-
-  // SJF - non-preemptive
-  function runSJFNonPreemptive(procs) {
-    // maintain ready queue by shortest burst
-    const gantt = [];
-    const n = procs.length;
-    let time = 0;
-    const done = [];
-    // sort by arrival
-    procs.sort(byArrival);
-    const list = procs.slice();
-    while (done.length < n) {
-      const ready = list.filter(p => p.arrival <= time && !p.done);
-      if (!ready.length) {
-        // idle to next arrival
-        const next = list.find(p => !p.done);
-        time = Math.max(time, next.arrival);
-        continue;
-      }
-      // pick shortest burst; tie-break by arrival then name
-      ready.sort((a,b)=> a.burst - b.burst || a.arrival - b.arrival || (a.name>b.name?1:-1));
-      const p = ready[0];
-      p.done = true;
-      const start = time;
-      const end = time + p.burst;
-      gantt.push({ name: p.name, start, end });
-      p.completion = end;
-      time = end;
-      done.push(p);
-    }
-    return { gantt, procs };
-  }
-
-  // SRTF (preemptive SJF)
-  function runSRTF(procs) {
-    const gantt = [];
-    // init remaining
-    procs.forEach(p => { p.remaining = p.burst; p.completion = null; p.started = false; });
-    procs.sort(byArrival);
-    let time = 0;
-    const n = procs.length;
-    let finished = 0;
-    let lastProc = null;
-    while (finished < n) {
-      // find ready with smallest remaining >0
-      const ready = procs.filter(p => p.arrival <= time && p.remaining > 0);
-      if (!ready.length) {
-        // idle to next arrival
-        const next = procs.find(p => p.remaining > 0);
-        time = Math.max(time, next.arrival);
-        lastProc = null;
-        continue;
-      }
-      ready.sort((a,b)=> a.remaining - b.remaining || a.arrival - b.arrival || (a.name>b.name?1:-1));
-      const p = ready[0];
-      // run 1 unit (time quantum = 1)
-      const segStart = time;
-      time += 1;
-      p.remaining -= 1;
-      const segEnd = time;
-      // append or extend last segment if same process
-      if (lastProc && lastProc.name === p.name && gantt.length) {
-        gantt[gantt.length-1].end = segEnd;
-      } else {
-        gantt.push({ name: p.name, start: segStart, end: segEnd });
-      }
-      lastProc = p;
-      if (p.remaining === 0) {
-        p.completion = time;
-        finished++;
-      }
-    }
-    return { gantt, procs };
-  }
-
-  // Round Robin
-  function runRR(procs, quantum = 2) {
-    const gantt = [];
-    // prepare queue: sort by arrival
-    procs.forEach(p => { p.remaining = p.burst; p.completion = null; });
-    procs.sort(byArrival);
-    const q = [];
-    let time = 0;
-    let i = 0; // index for arrivals
-    while (true) {
-      // enqueue arrivals at current time
-      while (i < procs.length && procs[i].arrival <= time) {
-        q.push(Object.assign({}, procs[i]));
-        // but we should reference original to store completion, so keep original ref
-        // we'll manage by mapping names to originals later
-        i++;
-      }
-      if (!q.length) {
-        if (i < procs.length) {
-          time = procs[i].arrival;
-          continue;
-        } else break;
-      }
-      const cur = q.shift();
-      // find original process object to update completion
-      const orig = procs.find(p => p.name === cur.name && p.remaining === cur.remaining);
-      const run = Math.min(quantum, cur.remaining);
-      const start = time;
-      time += run;
-      const end = time;
-      // push segment; merge if same as last
-      if (gantt.length && gantt[gantt.length-1].name === cur.name) {
-        gantt[gantt.length-1].end = end;
-      } else {
-        gantt.push({ name: cur.name, start, end });
-      }
-      cur.remaining -= run;
-      // enqueue any arrivals that occurred during this time slice
-      while (i < procs.length && procs[i].arrival <= time) {
-        q.push(Object.assign({}, procs[i]));
-        i++;
-      }
-      if (cur.remaining > 0) {
-        // push back with updated remaining
-        q.push(cur);
-      } else {
-        // completed: set completion for original process with same name but careful if duplicate names exist
-        // find an original with no completion yet
-        const origUnfinished = procs.find(p => p.name === cur.name && (p.completion == null));
-        if (origUnfinished) origUnfinished.completion = end;
-      }
-    }
-    // fill completion for any remaining not set (should be set)
-    procs.forEach(p => { if (p.completion == null) p.completion = p.arrival; });
-    return { gantt, procs };
-  }
-
-  // Priority non-preemptive (lower number = higher priority)
-  function runPriorityNonPreemptive(procs) {
-    const gantt = [];
-    const n = procs.length;
-    let time = 0;
-    procs.sort(byArrival);
-    while (procs.some(p => !p.done)) {
-      const ready = procs.filter(p => p.arrival <= time && !p.done);
-      if (!ready.length) {
-        const next = procs.find(p => !p.done);
-        time = Math.max(time, next.arrival);
-        continue;
-      }
-      ready.sort((a,b)=> a.priority - b.priority || a.arrival - b.arrival || (a.name>b.name?1:-1));
-      const p = ready[0];
-      p.done = true;
-      const start = time;
-      const end = time + p.burst;
-      gantt.push({ name: p.name, start, end });
-      p.completion = end;
-      time = end;
-    }
-    return { gantt, procs };
-  }
-// Reset button functionality
-document.getElementById("resetBtn").addEventListener("click", () => {
-  processes = []; // clear process list
-  document.getElementById("gantt").innerHTML = "";
-  document.getElementById("results").innerHTML = "";
+// Ensure quantum visibility
+algorithmEl.addEventListener('change', () => {
+  quantumRow.classList.toggle('hidden', algorithmEl.value !== 'rr');
 });
 
-// Example drawGanttChart function with aligned markers
-function drawGanttChart(schedule) {
-  const gantt = document.getElementById("gantt");
-  const markers = document.getElementById("timeMarkers");
-  gantt.innerHTML = "";
-  markers.innerHTML = "";
+// Add process
+procForm.addEventListener('submit', e => {
+  e.preventDefault();
+  const id = document.getElementById('pId').value.trim();
+  const arrival = parseInt(document.getElementById('pArrival').value, 10);
+  const burst = parseInt(document.getElementById('pBurst').value, 10);
+  const priority = parseInt(document.getElementById('pPriority').value, 10);
 
-  schedule.forEach((slot, i) => {
-    // Gantt block
-    const block = document.createElement("div");
-    block.className = "gantt-block";
-    block.style.width = (slot.end - slot.start) * 50 + "px"; // scale
-    block.style.backgroundColor = getColor(slot.name);
-    block.innerText = slot.name;
-    gantt.appendChild(block);
+  if (!id) { alert('Enter a process ID'); return; }
+  if (processes.some(p => p.id.toLowerCase() === id.toLowerCase())) {
+    alert('Duplicate process ID not allowed');
+    return;
+  }
+  if (isNaN(arrival) || arrival < 0) { alert('Arrival must be >= 0'); return; }
+  if (isNaN(burst) || burst <= 0) { alert('Burst must be >= 1'); return; }
 
-    // Start time marker (aligned to block's left)
-    const start = document.createElement("span");
-    start.className = "time-marker";
-    start.style.width = (slot.end - slot.start) * 50 + "px"; // same width as block
-    start.innerText = slot.start;
-    markers.appendChild(start);
+  processes.push({ id, arrival, burst, priority: isNaN(priority) ? 0 : priority });
+  assignColor(id);
+  renderProcList();
+  procForm.reset();
+});
 
-    // Last block → add end time marker at the right
-    if (i === schedule.length - 1) {
-      const end = document.createElement("span");
-      end.className = "time-marker end";
-      end.innerText = slot.end;
-      markers.appendChild(end);
+// assign a distinct color per process id (consistent)
+function assignColor(id) {
+  if (colorMap[id]) return;
+  const hue = Math.floor(Math.random() * 360);
+  colorMap[id] = `hsl(${hue} 75% 70%)`;
+}
+
+// render list with delete button
+function renderProcList() {
+  procListEl.innerHTML = '';
+  processes.sort((a,b) => a.arrival - b.arrival || a.id.localeCompare(b.id));
+  processes.forEach((p, i) => {
+    const row = document.createElement('div');
+    row.className = 'proc-row';
+    row.innerHTML = `<div class="left"><strong>${p.id}</strong><div class="meta">AT: ${p.arrival} • BT: ${p.burst} • P: ${p.priority}</div></div>`;
+    const del = document.createElement('button');
+    del.textContent = 'Delete';
+    del.addEventListener('click', () => {
+      processes.splice(i,1);
+      renderProcList();
+    });
+    row.appendChild(del);
+    procListEl.appendChild(row);
+  });
+}
+
+// reset all
+resetBtn.addEventListener('click', () => {
+  processes = [];
+  colorMap = {};
+  renderProcList();
+  clearOutputs();
+});
+
+// clear list only
+clearListBtn.addEventListener('click', () => {
+  processes = [];
+  renderProcList();
+});
+
+// run visualization
+runBtn.addEventListener('click', () => {
+  if (!processes.length) { alert('Add one or more processes first'); return; }
+  const algo = algorithmEl.value;
+  const q = Math.max(1, parseInt(quantumEl.value, 10) || 2);
+  const copied = processes.map(p => ({ ...p })); // don't mutate original list
+  let result = { gantt: [], procs: [] };
+
+  if (algo === 'fcfs') result = scheduleFCFS(copied);
+  else if (algo === 'sjf-np') result = scheduleSJFNonPreemptive(copied);
+  else if (algo === 'srtf') result = scheduleSRTF(copied);
+  else if (algo === 'rr') result = scheduleRR(copied, q);
+  else if (algo === 'priority') result = schedulePriorityNP(copied);
+
+  // Render outputs
+  renderGantt(result.gantt);
+  renderStats(result.procs);
+});
+
+// clear output helpers
+function clearOutputs() {
+  ganttEl.innerHTML = '';
+  timeMarkersEl.innerHTML = '';
+  statsEl.innerHTML = '';
+  if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
+}
+
+/* =========================
+   Scheduling algorithms
+   Each returns: { gantt: [ {id,start,end}... ], procs: [processes with ct,tat,wt,rt] }
+   Note: procs are the array passed in (mutated with ct/tat/wt/rt where possible).
+   ========================= */
+
+// FCFS
+function scheduleFCFS(procs) {
+  procs.sort((a,b) => a.arrival - b.arrival || a.id.localeCompare(b.id));
+  const gantt = [];
+  let t = 0;
+  procs.forEach(p => {
+    t = Math.max(t, p.arrival);
+    gantt.push({ id: p.id, start: t, end: t + p.burst });
+    p.ct = t + p.burst;
+    p.tat = p.ct - p.arrival;
+    p.wt = p.tat - p.burst;
+    p.rt = (p.ct - p.burst) - p.arrival; // first start - arrival ; in FCFS first start = ct - burst
+    t += p.burst;
+  });
+  return { gantt: mergeAdjacent(gantt), procs };
+}
+
+// SJF non-preemptive
+function scheduleSJFNonPreemptive(procs) {
+  const gantt = [];
+  const n = procs.length;
+  let t = 0;
+  const done = new Set();
+  while (done.size < n) {
+    const ready = procs.filter(p => !done.has(p.id) && p.arrival <= t);
+    if (ready.length === 0) {
+      // jump to next arrival
+      const next = Math.min(...procs.filter(p => !done.has(p.id)).map(p => p.arrival));
+      t = Math.max(t, next);
+      continue;
+    }
+    ready.sort((a,b) => a.burst - b.burst || a.arrival - b.arrival || a.id.localeCompare(b.id));
+    const p = ready[0];
+    gantt.push({ id: p.id, start: t, end: t + p.burst });
+    p.ct = t + p.burst;
+    p.tat = p.ct - p.arrival;
+    p.wt = p.tat - p.burst;
+    p.rt = t - p.arrival; // first start is t
+    t += p.burst;
+    done.add(p.id);
+  }
+  return { gantt: mergeAdjacent(gantt), procs };
+}
+
+// SRTF (preemptive)
+function scheduleSRTF(procs) {
+  // initialize
+  const gantt = [];
+  procs.forEach(p => { p.rem = p.burst; p.first = null; p.ct = null; });
+  let t = 0, finished = 0, lastId = null;
+  procs.sort((a,b) => a.arrival - b.arrival || a.id.localeCompare(b.id));
+  while (finished < procs.length) {
+    const ready = procs.filter(p => p.rem > 0 && p.arrival <= t);
+    if (ready.length === 0) {
+      // idle to next arrival
+      const next = Math.min(...procs.filter(p => p.rem>0).map(p => p.arrival));
+      // add idle gap
+      if (next > t) {
+        gantt.push({ id: 'IDLE', start: t, end: next });
+        t = next;
+        lastId = null;
+        continue;
+      }
+    } else {
+      // pick shortest remaining
+      ready.sort((a,b) => a.rem - b.rem || a.arrival - b.arrival || a.id.localeCompare(b.id));
+      const p = ready[0];
+      if (p.first === null) p.first = t;
+      // run one unit
+      if (lastId === p.id && gantt.length && gantt[gantt.length -1].id === p.id) {
+        gantt[gantt.length - 1].end += 1;
+      } else {
+        gantt.push({ id: p.id, start: t, end: t+1 });
+      }
+      p.rem -= 1;
+      t += 1;
+      if (p.rem === 0) {
+        p.ct = t;
+        p.tat = p.ct - p.arrival;
+        p.wt = p.tat - p.burst;
+        p.rt = p.first - p.arrival;
+        finished++;
+      }
+      lastId = p.id;
+    }
+  }
+  return { gantt: mergeAdjacent(gantt), procs };
+}
+
+// Round Robin (RRS)
+function scheduleRR(procs, quantum=2) {
+  // sort by arrival
+  const gantt = [];
+  const queue = [];
+  procs.forEach(p => { p.rem = p.burst; p.first = null; p.ct = null; });
+  const list = procs.slice().sort((a,b) => a.arrival - b.arrival || a.id.localeCompare(b.id));
+  let t = 0, idx = 0, completed = 0;
+  while (completed < procs.length) {
+    // enqueue arrived
+    while (idx < list.length && list[idx].arrival <= t) {
+      queue.push(list[idx]);
+      idx++;
+    }
+    if (queue.length === 0) {
+      if (idx < list.length) {
+        const next = list[idx].arrival;
+        // idle gap
+        gantt.push({ id: 'IDLE', start: t, end: next });
+        t = next;
+        continue;
+      } else break;
+    }
+    const p = queue.shift();
+    if (p.first === null) p.first = t;
+    const exec = Math.min(quantum, p.rem);
+    // append segment
+    if (gantt.length && gantt[gantt.length-1].id === p.id) {
+      gantt[gantt.length-1].end += exec;
+    } else {
+      gantt.push({ id: p.id, start: t, end: t + exec });
+    }
+    p.rem -= exec;
+    t += exec;
+    // enqueue any new arrivals during exec
+    while (idx < list.length && list[idx].arrival <= t) {
+      queue.push(list[idx]);
+      idx++;
+    }
+    if (p.rem > 0) queue.push(p);
+    else {
+      p.ct = t;
+      p.tat = p.ct - p.arrival;
+      p.wt = p.tat - p.burst;
+      p.rt = p.first - p.arrival;
+      completed++;
+    }
+  }
+  return { gantt: mergeAdjacent(gantt), procs };
+}
+
+// Priority non-preemptive (lower number = higher priority)
+function schedulePriorityNP(procs) {
+  const gantt = [];
+  const n = procs.length;
+  let t = 0;
+  const done = new Set();
+  while (done.size < n) {
+    const ready = procs.filter(p => !done.has(p.id) && p.arrival <= t);
+    if (ready.length === 0) {
+      const next = Math.min(...procs.filter(p => !done.has(p.id)).map(p => p.arrival));
+      t = Math.max(t, next);
+      continue;
+    }
+    ready.sort((a,b) => a.priority - b.priority || a.arrival - b.arrival || a.id.localeCompare(b.id));
+    const p = ready[0];
+    gantt.push({ id: p.id, start: t, end: t + p.burst });
+    p.ct = t + p.burst;
+    p.tat = p.ct - p.arrival;
+    p.wt = p.tat - p.burst;
+    p.rt = t - p.arrival;
+    t += p.burst;
+    done.add(p.id);
+  }
+  return { gantt: mergeAdjacent(gantt), procs };
+}
+
+/* =========================
+   Helpers for schedule & rendering
+   ========================= */
+
+// merge adjacent segments belonging to same id
+function mergeAdjacent(arr) {
+  if (!arr.length) return [];
+  const out = [ {...arr[0]} ];
+  for (let i = 1; i < arr.length; i++) {
+    const cur = arr[i];
+    const prev = out[out.length - 1];
+    if (prev.id === cur.id && prev.end === cur.start) {
+      prev.end = cur.end;
+    } else {
+      out.push({ ...cur });
+    }
+  }
+  return out;
+}
+
+/* =========================
+   Gantt rendering (aligned timestamps)
+   ========================= */
+
+function renderGantt(timeline) {
+  clearGantt();
+  if (!timeline || !timeline.length) return;
+
+  // ensure includes leading 0 marker
+  timeline = timeline.slice();
+
+  // compute overall start and end
+  const overallStart = Math.min(...timeline.map(s => s.start));
+  const overallEnd = Math.max(...timeline.map(s => s.end));
+  const total = Math.max(1, overallEnd - overallStart);
+  const scale = PX_PER_UNIT; // px per unit time
+
+  // If first segment doesn't start at 0, include IDLE at start (handled by algorithms but double-check)
+  if (timeline[0].start > overallStart) {
+    timeline.unshift({ id: 'IDLE', start: overallStart, end: timeline[0].start });
+  }
+
+  // Draw each wrapper (bar + marker row)
+  timeline.forEach((seg, idx) => {
+    const widthPx = Math.max(6, Math.round((seg.end - seg.start) * scale));
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'gantt-item';
+    wrapper.style.width = widthPx + 'px';
+    wrapper.style.marginRight = '6px';
+
+    // Bar
+    const bar = document.createElement('div');
+    bar.className = 'gantt-block';
+    bar.style.width = '100%';
+    bar.style.background = seg.id === 'IDLE' ? '' : (colorMap[seg.id] || assignOnTheFly(seg.id));
+    bar.textContent = seg.id === 'IDLE' ? '' : seg.id;
+    if (seg.id === 'IDLE') bar.classList.add('idle');
+    wrapper.appendChild(bar);
+
+    // Marker row
+    const markers = document.createElement('div');
+    markers.className = 'gantt-marker-row';
+    // start label (always)
+    const startLabel = document.createElement('span');
+    startLabel.className = 'marker-start';
+    startLabel.textContent = seg.start;
+    markers.appendChild(startLabel);
+    // last segment end label
+    if (idx === timeline.length - 1) {
+      const endLabel = document.createElement('span');
+      endLabel.className = 'marker-end';
+      endLabel.textContent = seg.end;
+      markers.appendChild(endLabel);
+    }
+    wrapper.appendChild(markers);
+
+    ganttEl.appendChild(wrapper);
+  });
+
+  // final: if last segment doesn't show final end because of merging, ensure last end marker exists:
+  // (we added end marker on last segment above)
+}
+
+// ensure color exists for id, create if missing
+function assignOnTheFly(id) {
+  if (!colorMap[id]) {
+    const hue = Math.floor(Math.random() * 360);
+    colorMap[id] = `hsl(${hue} 70% 70%)`;
+  }
+  return colorMap[id];
+}
+
+function clearGantt() {
+  ganttEl.innerHTML = '';
+  timeMarkersEl.innerHTML = '';
+}
+
+/* =========================
+   Stats rendering & Chart
+   ========================= */
+
+function renderStats(procs) {
+  // compute sums & averages; procs should have ct,tat,wt,rt where possible
+  const n = procs.length;
+  let sumCT = 0, sumTAT = 0, sumWT = 0, sumRT = 0;
+  // build table
+  let table = `<table><thead><tr>
+    <th>ID</th><th>AT</th><th>BT</th><th>P</th><th>CT</th><th>TAT</th><th>WT</th><th>RT</th><th>Indicator</th>
+  </tr></thead><tbody>`;
+  procs.forEach(p => {
+    const ct = p.ct ?? '-';
+    const tat = p.tat ?? '-';
+    const wt = p.wt ?? '-';
+    const rt = p.rt ?? '-';
+    if (typeof ct === 'number') sumCT += ct;
+    if (typeof tat === 'number') sumTAT += tat;
+    if (typeof wt === 'number') sumWT += wt;
+    if (typeof rt === 'number') sumRT += rt;
+    table += `<tr>
+      <td>${p.id}</td><td>${p.arrival}</td><td>${p.burst}</td><td>${p.priority}</td>
+      <td>${ct}</td><td>${tat}</td><td>${wt}</td><td>${rt}</td>
+      <td>${(typeof ct === 'number') ? '✅' : '–'}</td>
+    </tr>`;
+  });
+  const avgCT = (sumCT / n) || 0;
+  const avgTAT = (sumTAT / n) || 0;
+  table += `</tbody></table>
+    <div style="margin-top:8px;color:var(--muted);">
+      <strong>Avg CT:</strong> ${avgCT.toFixed(2)} &nbsp; | &nbsp;
+      <strong>Avg TAT:</strong> ${avgTAT.toFixed(2)}
+    </div>`;
+  statsEl.innerHTML = table;
+
+  // build chart for CT, TAT, WT, RT
+  const labels = procs.map(p => p.id);
+  const dataCT = procs.map(p => p.ct ?? 0);
+  const dataTAT = procs.map(p => p.tat ?? 0);
+  const dataWT = procs.map(p => p.wt ?? 0);
+  const dataRT = procs.map(p => p.rt ?? 0);
+
+  if (chartInstance) chartInstance.destroy();
+  const ctx = chartCanvas.getContext('2d');
+  chartInstance = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { label: 'CT', data: dataCT, backgroundColor: 'rgba(96,165,250,0.9)' },
+        { label: 'TAT', data: dataTAT, backgroundColor: 'rgba(125,211,252,0.9)' },
+        { label: 'WT', data: dataWT, backgroundColor: 'rgba(250,204,21,0.9)' },
+        { label: 'RT', data: dataRT, backgroundColor: 'rgba(244,114,182,0.9)' }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom' } },
+      scales: { y: { beginAtZero: true } }
     }
   });
 }
 
-
-  // init
-  renderProcs();
-  clearOutput();
-
-})();
+/* =========================
+   End of script
+   ========================= */
