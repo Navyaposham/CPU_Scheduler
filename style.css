@@ -1,139 +1,102 @@
 :root{
-  --bg:#0b1220;
-  --card:#071025;
+  --bg:#071228;
+  --card:#0b1830;
   --muted:#9fb0c8;
   --accent:#60a5fa;
-  --accent-2:#7dd3fc;
-  --glass: rgba(255,255,255,0.03);
   --white:#e6eef8;
+  --glass: rgba(255,255,255,0.03);
   font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial;
 }
 
 *{box-sizing:border-box}
 html,body{height:100%}
 body{
-  margin:0; padding:0;
-  background: linear-gradient(180deg,#071226 0%, #041022 100%);
+  margin:0;padding:0;
+  background: linear-gradient(180deg,#041122,#061227 70%);
   color:var(--white);
+  -webkit-font-smoothing:antialiased;
   font-size:15px;
 }
 
-.top{padding:18px 24px;border-bottom:1px solid rgba(255,255,255,0.03);}
+.top{
+  padding:18px 20px;
+  text-align:center;
+  border-bottom:1px solid rgba(255,255,255,0.03);
+}
 .top h1{margin:0;font-size:20px}
-.sub{margin:6px 0 0;color:var(--muted);font-size:13px}
+.sub{margin-top:6px;color:var(--muted);font-size:13px}
 
-.wrap{display:flex;gap:18px;width:min(1100px,96%);margin:20px auto;align-items:flex-start;}
-.left{flex:0 0 340px}
-.right{flex:1}
+.wrap{
+  display:grid;
+  grid-template-columns: 360px 1fr;
+  gap:18px;
+  width:min(1100px,96%);
+  margin:20px auto;
+  align-items:start;
+}
 
 .card{
   background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
   border:1px solid rgba(255,255,255,0.03);
   padding:14px;
   border-radius:10px;
-  margin-bottom:16px;
-  box-shadow:0 8px 20px rgba(2,6,23,0.6);
+  box-shadow:0 8px 20px rgba(0,0,0,0.5);
 }
 
-button.reset {
-  background-color: #d9534f;
-  color: white;
-  margin-left: 10px;
-  padding: 6px 12px;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-}
-button.reset:hover { background-color: #c9302c; }
-
-h2{margin:0 0 8px;font-size:16px}
+h2{margin:0 0 10px;font-size:16px}
 .row{display:flex;align-items:center;gap:8px;margin:8px 0}
-.row label{width:90px;color:var(--muted);font-size:13px}
-.row input, .row select{
+.row label{width:110px;color:var(--muted);font-size:13px}
+.row input[type="text"], .row input[type="number"], .row select{
   flex:1;padding:8px;border-radius:6px;border:none;background:var(--glass);color:var(--white);
+  outline:1px solid rgba(255,255,255,0.02)
 }
 
 .actions{display:flex;gap:8px;margin-top:8px}
-button{padding:8px 10px;border-radius:8px;border:none;background:var(--accent);color:#042033;font-weight:600;cursor:pointer}
+button{padding:8px 10px;border-radius:8px;border:none;background:var(--accent);color:#042033;font-weight:700;cursor:pointer}
 button:hover{filter:brightness(1.05)}
+button.secondary{background:transparent;color:var(--muted);border:1px solid rgba(255,255,255,0.03)}
+button.reset{background:#ef4444;color:#fff}
+
 .hidden{display:none}
 
-.proc-list{max-height:220px;overflow:auto;padding:6px 0}
-.proc-item{display:flex;align-items:center;justify-content:space-between;padding:6px;border-radius:8px;margin:6px 0;background:rgba(255,255,255,0.05)}
-.proc-item .meta{color:var(--muted);font-size:13px}
-
-/* Gantt chart */
-/* Gantt wrapper item: stack block above the marker row */
-.gantt {
-  display: flex;
-  gap: 2px;
-  align-items: flex-start;
-  padding: 8px;
-  overflow-x: auto;
-  background: linear-gradient(180deg,#031024,#071229);
-  border-radius: 6px;
+/* proc list */
+.proc-list{max-height:260px;overflow:auto;padding-top:6px}
+.proc-row{
+  display:flex;align-items:center;justify-content:space-between;padding:8px;border-radius:6px;margin-bottom:8px;background:rgba(255,255,255,0.02);
 }
+.proc-row .left{display:flex;flex-direction:column}
+.proc-row .meta{color:var(--muted);font-size:13px}
+.proc-row button{background:transparent;color:var(--muted);border:1px solid rgba(255,255,255,0.03);padding:6px;border-radius:6px}
 
-/* Column wrapper around each block+marker */
-.gantt-item {
-  display: inline-flex;
-  flex-direction: column;
-  align-items: stretch;
+/* Gantt styling (column wrappers for alignment) */
+#ganttWrap{overflow-x:auto;padding-bottom:6px}
+.gantt{
+  display:flex;gap:6px;align-items:flex-start;padding:8px;border-radius:8px;background:linear-gradient(180deg,#021426,#031428);
+  min-height:64px;
 }
-
-/* The colored process block */
-.gantt-block {
-  border-radius: 6px;
-  border: 1px solid rgba(0,0,0,0.08);
-  box-shadow: 0 2px 4px rgba(0,0,0,0.08);
-  overflow: hidden;
+.gantt-item{display:inline-flex;flex-direction:column;align-items:stretch}
+.gantt-block{
+  height:44px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-weight:700;color:#042033;
+  padding:6px 8px;box-shadow:0 3px 10px rgba(0,0,0,0.25);
 }
+.gantt-block.idle{background:repeating-linear-gradient(45deg,#94a3b8 0,#94a3b8 6px,#cbd5e1 6px,#cbd5e1 12px);color:#042033}
 
-/* bottom row inside each wrapper that houses the start/end markers */
-.gantt-marker-row {
-  height: 20px;
-  position: relative;
-  font-size: 12px;
-  color: var(--muted);
-}
+/* marker row under each block */
+.gantt-marker-row{height:18px;position:relative;font-size:12px;color:var(--muted);padding-top:6px}
+.gantt-marker-row .marker-start{position:absolute;left:6px;top:0}
+.gantt-marker-row .marker-end{position:absolute;right:6px;top:0}
 
-/* start label floats at left of the wrapper */
-.gantt-marker-row .marker-start { position: absolute; left: 4px; top: 0; }
-
-/* end label floats at right of the wrapper */
-.gantt-marker-row .marker-end { position: absolute; right: 4px; top: 0; }
-/* Default Gantt block */
-.gantt-block {
-  border-radius: 6px;
-  border: 1px solid rgba(0,0,0,0.08);
-  box-shadow: 0 2px 4px rgba(0,0,0,0.08);
-  overflow: hidden;
-  color: #042033;
-  font-weight: 700;
-}
-
-/* Different process colors */
-.gantt-block {
-  border-radius: 6px;
-  text-align: center;
-  font-weight: bold;
-  margin-right: 2px;
-  color: #042033;
-  padding: 8px 0;
-}
-
-
-/* fallback if process id not in list */
-.gantt-block {
-  background: #7dd3fc; /* default sky blue */
-}
-
-.time-markers{display:flex;overflow-x:auto;margin-top:4px;font-size:12px;color:var(--muted);}
-.time-marker{flex:1;text-align:center;min-width:30px;}
-
+/* stats & chart */
+#stats{margin-top:6px;color:var(--muted);font-size:13px}
 #stats table{width:100%;border-collapse:collapse;color:var(--muted)}
-#stats th,#stats td{padding:6px;border-bottom:1px solid rgba(255,255,255,0.05);font-size:13px;text-align:center}
+#stats th,#stats td{padding:8px;border-bottom:1px dashed rgba(255,255,255,0.03);text-align:center}
 #stats th{color:var(--white)}
+#chartCanvas{width:100%;height:260px;margin-top:8px}
 
-.foot{text-align:center;padding:18px;color:var(--muted);font-size:13px}
-@media (max-width:980px){.wrap{flex-direction:column}}
+/* footer */
+.foot{text-align:center;padding:14px;color:var(--muted);font-size:12px}
+
+@media (max-width:980px){
+  .wrap{grid-template-columns: 1fr; padding:12px}
+  .row label{width:95px}
+}
