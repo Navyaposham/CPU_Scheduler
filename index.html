@@ -13,6 +13,7 @@
   </header>
 
   <div class="container">
+    <!-- Controls -->
     <div class="card">
       <div class="controls">
         <div class="field">
@@ -52,27 +53,41 @@
       </div>
     </div>
 
-    <div class="grid" style="margin-top:12px">
-      <div class="card">
-        <h2>Processes</h2>
-        <div class="hint">Enter <strong>Arrival Time</strong>, <strong>Burst Time</strong>, and <strong>Priority</strong>.</div>
-        <div style="overflow:auto; max-height: 360px; margin-top:10px">
-          <table id="ptable">
-            <thead>
-              <tr>
-                <th>PID</th>
-                <th>Arrival</th>
-                <th>Burst</th>
-                <th>Priority</th>
-                <th>Color</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody></tbody>
-          </table>
-        </div>
+    <!-- Process Table -->
+    <div class="card" style="margin-top:12px">
+      <h2>Processes</h2>
+      <div class="hint">Enter <strong>Arrival Time</strong>, <strong>Burst Time</strong>, and <strong>Priority</strong>.</div>
+      <div style="overflow:auto; max-height: 360px; margin-top:10px">
+        <table id="ptable">
+          <thead>
+            <tr>
+              <th>PID</th>
+              <th>Arrival</th>
+              <th>Burst</th>
+              <th>Priority</th>
+              <th>Color</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
       </div>
+    </div>
 
+    <!-- Metrics -->
+    <div class="card" style="margin-top:12px">
+      <h2>Metrics</h2>
+      <div class="metrics" id="metrics">
+        <div class="kpi"><div class="mini">Avg Completion Time</div><div class="v" id="avgCT">—</div></div>
+        <div class="kpi"><div class="mini">Avg Turnaround Time</div><div class="v" id="avgTAT">—</div></div>
+        <div class="kpi"><div class="mini">Avg Waiting Time</div><div class="v" id="avgWT">—</div></div>
+        <div class="kpi"><div class="mini">Throughput (jobs/unit)</div><div class="v" id="throughput">—</div></div>
+      </div>
+      <div id="err" class="error" style="margin-top:8px"></div>
+      <div class="legend" id="legend" style="margin-top:12px"></div>
+    </div>
+
+    <!-- Gantt Chart -->
     <div class="card" style="margin-top:12px">
       <h2>Gantt Chart</h2>
       <div class="gantt-wrap">
@@ -81,18 +96,8 @@
       </div>
       <div class="hint" style="margin-top:8px">Blocks are proportional to time. Timestamps appear at block boundaries.</div>
     </div>
-<div class="card">
-        <h2>Metrics</h2>
-        <div class="metrics" id="metrics">
-          <div class="kpi"><div class="mini">Avg Completion Time</div><div class="v" id="avgCT">—</div></div>
-          <div class="kpi"><div class="mini">Avg Turnaround Time</div><div class="v" id="avgTAT">—</div></div>
-          <div class="kpi"><div class="mini">Avg Waiting Time</div><div class="v" id="avgWT">—</div></div>
-          <div class="kpi"><div class="mini">Throughput (jobs/unit)</div><div class="v" id="throughput">—</div></div>
-        </div>
-        <div id="err" class="error" style="margin-top:8px"></div>
-        <div class="legend" id="legend" style="margin-top:12px"></div>
-      </div>
-    </div>
+
+    <!-- Detailed Results -->
     <div class="card" style="margin-top:12px">
       <h2>Detailed Results</h2>
       <div style="overflow:auto">
@@ -114,8 +119,8 @@
         </table>
       </div>
     </div>
-  </div>
 
-</body>
+  </div>
   <script src="script.js"></script>
+</body>
 </html>
