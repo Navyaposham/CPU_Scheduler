@@ -383,6 +383,44 @@
     return { gantt, procs };
   }
 
+// Reset button functionality
+document.getElementById("resetBtn").addEventListener("click", () => {
+  processes = []; // clear process list
+  document.getElementById("gantt").innerHTML = "";
+  document.getElementById("results").innerHTML = "";
+});
+
+// Example drawGanttChart function with aligned markers
+function drawGanttChart(schedule) {
+  const gantt = document.getElementById("gantt");
+  gantt.innerHTML = "";
+
+  schedule.forEach((slot, index) => {
+    const block = document.createElement("div");
+    block.className = "gantt-block";
+    block.style.width = (slot.end - slot.start) * 50 + "px"; // scale factor
+    block.innerHTML = `<div>${slot.name}</div>`;
+
+    // Add start time
+    const start = document.createElement("span");
+    start.className = "time-marker";
+    start.innerText = slot.start;
+    block.appendChild(start);
+
+    // Add end time for the last block
+    if (index === schedule.length - 1) {
+      const end = document.createElement("span");
+      end.className = "time-marker end";
+      end.innerText = slot.end;
+      block.appendChild(end);
+    }
+
+    gantt.appendChild(block);
+  });
+}
+
+
+   
   // init
   renderProcs();
   clearOutput();
