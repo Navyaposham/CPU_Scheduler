@@ -1,311 +1,430 @@
-// script.js - CPU Scheduling Visualizer (All algorithms)
+/* script.js - algorithms + UI glue
+   Supports:
+   - FCFS
+   - SJF non-preemptive
+   - SRTF (SJF preemptive)
+   - Round Robin
+   - Priority (non-preemptive)
+*/
 
-// Global data
-let processes = [];
-let chartInstance = null;
+(() => {
+  // UI elements
+  const procForm = document.getElementById('procForm');
+  const pName = document.getElementById('pName');
+  const pArrival = document.getElementById('pArrival');
+  const pBurst = document.getElementById('pBurst');
+  const pPriority = document.getElementById('pPriority');
+  const procListEl = document.getElementById('procList');
+  const algorithmEl = document.getElementById('algorithm');
+  const quantumRow = document.getElementById('quantumRow');
+  const quantumEl = document.getElementById('quantum');
+  const runBtn = document.getElementById('runBtn');
+  const addSample = document.getElementById('addSample');
+  const clearAll = document.getElementById('clearAll');
+  const ganttEl = document.getElementById('gantt');
+  const timeMarkersEl = document.getElementById('timeMarkers');
+  const statsEl = document.getElementById('stats');
+  const exportBtn = document.getElementById('exportBtn');
 
-// Add process
-document.getElementById("procForm").addEventListener("submit", e => {
-  e.preventDefault();
-  const id = document.getElementById("pName").value.trim();
-  const arrival = parseInt(document.getElementById("pArrival").value);
-  const burst = parseInt(document.getElementById("pBurst").value);
-  const priority = parseInt(document.getElementById("pPriority").value);
+  let processes = [];
 
-  // prevent duplicate IDs
-  if (processes.some(p => p.id === id)) {
-    alert("Process ID must be unique!");
-    return;
+  function uid() {
+    return Math.random().toString(36).slice(2, 7).toUpperCase();
   }
 
-  processes.push({ id, arrival, burst, priority });
-  renderProcList();
-  e.target.reset();
-});
-
-// Clear all
-document.getElementById("clearAll").addEventListener("click", () => {
-  processes = [];
-  renderProcList();
-  document.getElementById("gantt").innerHTML = "";
-  document.getElementById("timeMarkers").innerHTML = "";
-  document.getElementById("stats").innerHTML = "";
-  if (chartInstance) chartInstance.destroy();
-});
-
-// Reset
-document.getElementById("resetBtn").addEventListener("click", () => {
-  processes = [];
-  renderProcList();
-  document.getElementById("gantt").innerHTML = "";
-  document.getElementById("timeMarkers").innerHTML = "";
-  document.getElementById("stats").innerHTML = "";
-  if (chartInstance) chartInstance.destroy();
-});
-
-// Show quantum only for RR
-document.getElementById("algorithm").addEventListener("change", e => {
-  document.getElementById("quantumRow").classList.toggle("hidden", e.target.value !== "rr");
-});
-
-// Run
-document.getElementById("runBtn").addEventListener("click", () => {
-  const algo = document.getElementById("algorithm").value;
-  const quantum = parseInt(document.getElementById("quantum").value);
-  if (processes.length === 0) {
-    alert("Add processes first!");
-    return;
-  }
-  runScheduler(algo, quantum);
-});
-
-// Render process list
-function renderProcList() {
-  const wrap = document.getElementById("procList");
-  wrap.innerHTML = "";
-  processes.forEach(p => {
-    const div = document.createElement("div");
-    div.className = "proc-item";
-    div.innerHTML = `<strong>${p.id}</strong>
-      <span class="meta">AT:${p.arrival} BT:${p.burst} P:${p.priority}</span>`;
-    wrap.appendChild(div);
-  });
-}
-
-// Main scheduler
-function runScheduler(algo, quantum) {
-  let timeline = [];
-  let time = 0;
-  let procs = processes.map(p => ({ ...p, burstLeft: p.burst }));
-
-  if (algo === "fcfs") {
-    procs.sort((a,b) => a.arrival - b.arrival);
-    procs.forEach(p => {
-      time = Math.max(time, p.arrival);
-      timeline.push({ id:p.id, start:time, end:time+p.burst });
-      p.ct = time+p.burst;
-      p.tat = p.ct - p.arrival;
-      p.wt = p.tat - p.burst;
-      p.rt = p.wt;
-      time += p.burst;
+  // Render processes
+  function renderProcs() {
+    procListEl.innerHTML = '';
+    processes.forEach((p, i) => {
+      const div = document.createElement('div');
+      div.className = 'proc-item';
+      div.innerHTML = `<div>
+          <strong>${p.name}</strong>
+          <div class="meta">Arr: ${p.arrival} &nbsp; Burst: ${p.burst} &nbsp; Pri: ${p.priority}</div>
+        </div>
+        <div>
+          <button data-i="${i}" class="delBtn secondary">Delete</button>
+        </div>`;
+      procListEl.appendChild(div);
+    });
+    procListEl.querySelectorAll('.delBtn').forEach(b => {
+      b.addEventListener('click', e => {
+        const i = +e.target.dataset.i;
+        processes.splice(i, 1);
+        renderProcs();
+      });
     });
   }
 
-  if (algo === "sjf-np") {
-    let completed = [];
-    while (completed.length < procs.length) {
-      let avail = procs.filter(p => !completed.includes(p) && p.arrival <= time);
-      if (avail.length === 0) { time++; continue; }
-      let p = avail.reduce((a,b) => a.burst < b.burst ? a : b);
-      timeline.push({ id:p.id, start:time, end:time+p.burst });
-      p.ct = time+p.burst;
-      p.tat = p.ct - p.arrival;
-      p.wt = p.tat - p.burst;
-      p.rt = p.wt;
-      time += p.burst;
-      completed.push(p);
+  // Add sample processes
+  addSample.addEventListener('click', () => {
+    processes = [
+      { name: 'A', arrival: 0, burst: 5, priority: 2 },
+      { name: 'B', arrival: 1, burst: 3, priority: 1 },
+      { name: 'C', arrival: 2, burst: 8, priority: 3 },
+      { name: 'D', arrival: 3, burst: 6, priority: 2 }
+    ];
+    renderProcs();
+  });
+
+  clearAll.addEventListener('click', () => {
+    processes = [];
+    renderProcs();
+    clearOutput();
+  });
+
+  procForm.addEventListener('submit', e => {
+    e.preventDefault();
+    const name = pName.value.trim() || uid();
+    const arrival = Math.max(0, parseInt(pArrival.value, 10) || 0);
+    const burst = Math.max(1, parseInt(pBurst.value, 10) || 1);
+    const priority = parseInt(pPriority.value, 10) || 0;
+    processes.push({ name: name.toString(), arrival, burst, priority });
+    pName.value = '';
+    pArrival.value = '0';
+    pBurst.value = '1';
+    pPriority.value = '0';
+    renderProcs();
+  });
+
+  algorithmEl.addEventListener('change', () => {
+    quantumRow.classList.toggle('hidden', algorithmEl.value !== 'rr');
+  });
+
+  // Export current processes to JSON
+  exportBtn.addEventListener('click', () => {
+    const data = JSON.stringify(processes, null, 2);
+    const blob = new Blob([data], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'processes.json';
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+
+  runBtn.addEventListener('click', () => {
+    if (!processes.length) {
+      alert('Add at least one process first.');
+      return;
+    }
+    const alg = algorithmEl.value;
+    const q = Math.max(1, parseInt(quantumEl.value, 10) || 1);
+    // deep copy processes to avoid mutation
+    const procs = processes.map(p => ({
+      name: p.name,
+      arrival: Number(p.arrival),
+      burst: Number(p.burst),
+      priority: Number(p.priority)
+    }));
+    let result;
+    if (alg === 'fcfs') result = runFCFS(procs);
+    else if (alg === 'sjf-np') result = runSJFNonPreemptive(procs);
+    else if (alg === 'srtf') result = runSRTF(procs);
+    else if (alg === 'rr') result = runRR(procs, q);
+    else if (alg === 'priority') result = runPriorityNonPreemptive(procs);
+    else result = { gantt: [], procs: [] };
+
+    renderGantt(result.gantt);
+    renderStats(result.procs);
+  });
+
+  // Clear output
+  function clearOutput() {
+    ganttEl.innerHTML = '';
+    timeMarkersEl.innerHTML = '';
+    statsEl.innerHTML = '';
+  }
+
+  // Rendering gantt chart
+  function renderGantt(gantt) {
+    ganttEl.innerHTML = '';
+    timeMarkersEl.innerHTML = '';
+    if (!gantt || !gantt.length) return;
+    // compute timeline length
+    const start = Math.min(...gantt.map(s => s.start));
+    const end = Math.max(...gantt.map(s => s.end));
+    const total = end - start || 1;
+    // choose scale
+    const scale = Math.max(30, 600 / total); // px per unit time (bounded)
+    gantt.forEach(seg => {
+      const w = (seg.end - seg.start) * scale;
+      const div = document.createElement('div');
+      div.className = 'seg';
+      div.style.width = (w < 6 ? 6 : w) + 'px';
+      div.style.background = colorFor(seg.name);
+      div.title = `${seg.name} [${seg.start} → ${seg.end}]`;
+      div.textContent = seg.name;
+      ganttEl.appendChild(div);
+    });
+    // time markers
+    for (let t = start; t <= end; t++) {
+      const m = document.createElement('div');
+      m.style.minWidth = '24px';
+      m.style.textAlign = 'left';
+      m.textContent = t;
+      timeMarkersEl.appendChild(m);
     }
   }
 
-  if (algo === "srtf") {
-    let completed = 0;
-    let last = null;
-    while (completed < procs.length) {
-      let avail = procs.filter(p => p.burstLeft > 0 && p.arrival <= time);
-      if (avail.length === 0) { time++; continue; }
-      let p = avail.reduce((a,b) => a.burstLeft < b.burstLeft ? a : b);
-      if (last && last.id === p.id) {
-        timeline[timeline.length-1].end++;
+  // color generator for names
+  const colorMap = {};
+  function colorFor(name) {
+    if (colorMap[name]) return colorMap[name];
+    const hues = [200, 160, 280, 40, 320, 200, 120, 10];
+    const h = hues[Object.keys(colorMap).length % hues.length];
+    const color = `hsl(${h} 70% 70%)`;
+    colorMap[name] = color;
+    return color;
+  }
+
+  // Render statistics table
+  function renderStats(procArr) {
+    if (!procArr || !procArr.length) {
+      statsEl.innerHTML = '';
+      return;
+    }
+    // table with completion, turnaround, waiting
+    const lines = [];
+    lines.push('<table>');
+    lines.push('<thead><tr><th>Process</th><th>Arrival</th><th>Burst</th><th>Completion</th><th>Turnaround</th><th>Waiting</th></tr></thead>');
+    lines.push('<tbody>');
+    let totalTurn = 0, totalWait = 0;
+    procArr.forEach(p => {
+      const tat = p.completion - p.arrival;
+      const wait = tat - p.burst;
+      totalTurn += tat;
+      totalWait += wait;
+      lines.push(`<tr><td>${p.name}</td><td>${p.arrival}</td><td>${p.burst}</td><td>${p.completion}</td><td>${tat}</td><td>${wait}</td></tr>`);
+    });
+    const avgT = (totalTurn / procArr.length).toFixed(2);
+    const avgW = (totalWait / procArr.length).toFixed(2);
+    lines.push('</tbody></table>');
+    lines.push(`<p style="margin-top:10px;color:var(--muted)">Average Turnaround: <strong style="color:var(--white)">${avgT}</strong> · Average Waiting: <strong style="color:var(--white)">${avgW}</strong></p>`);
+    statsEl.innerHTML = lines.join('');
+  }
+
+  /********************
+   * Algorithms
+   ********************/
+
+  // Utility: sort by arrival, then name
+  function byArrival(a,b){ return a.arrival - b.arrival || (a.name > b.name ? 1 : -1); }
+
+  // FCFS (non-preemptive)
+  function runFCFS(procs) {
+    procs.sort(byArrival);
+    const gantt = [];
+    let time = 0;
+    procs.forEach(p => {
+      if (time < p.arrival) time = p.arrival;
+      const start = time;
+      const end = time + p.burst;
+      gantt.push({ name: p.name, start, end });
+      p.completion = end;
+      time = end;
+    });
+    return { gantt, procs };
+  }
+
+  // SJF - non-preemptive
+  function runSJFNonPreemptive(procs) {
+    // maintain ready queue by shortest burst
+    const gantt = [];
+    const n = procs.length;
+    let time = 0;
+    const done = [];
+    // sort by arrival
+    procs.sort(byArrival);
+    const list = procs.slice();
+    while (done.length < n) {
+      const ready = list.filter(p => p.arrival <= time && !p.done);
+      if (!ready.length) {
+        // idle to next arrival
+        const next = list.find(p => !p.done);
+        time = Math.max(time, next.arrival);
+        continue;
+      }
+      // pick shortest burst; tie-break by arrival then name
+      ready.sort((a,b)=> a.burst - b.burst || a.arrival - b.arrival || (a.name>b.name?1:-1));
+      const p = ready[0];
+      p.done = true;
+      const start = time;
+      const end = time + p.burst;
+      gantt.push({ name: p.name, start, end });
+      p.completion = end;
+      time = end;
+      done.push(p);
+    }
+    return { gantt, procs };
+  }
+
+  // SRTF (preemptive SJF)
+  function runSRTF(procs) {
+    const gantt = [];
+    // init remaining
+    procs.forEach(p => { p.remaining = p.burst; p.completion = null; p.started = false; });
+    procs.sort(byArrival);
+    let time = 0;
+    const n = procs.length;
+    let finished = 0;
+    let lastProc = null;
+    while (finished < n) {
+      // find ready with smallest remaining >0
+      const ready = procs.filter(p => p.arrival <= time && p.remaining > 0);
+      if (!ready.length) {
+        // idle to next arrival
+        const next = procs.find(p => p.remaining > 0);
+        time = Math.max(time, next.arrival);
+        lastProc = null;
+        continue;
+      }
+      ready.sort((a,b)=> a.remaining - b.remaining || a.arrival - b.arrival || (a.name>b.name?1:-1));
+      const p = ready[0];
+      // run 1 unit (time quantum = 1)
+      const segStart = time;
+      time += 1;
+      p.remaining -= 1;
+      const segEnd = time;
+      // append or extend last segment if same process
+      if (lastProc && lastProc.name === p.name && gantt.length) {
+        gantt[gantt.length-1].end = segEnd;
       } else {
-        timeline.push({ id:p.id, start:time, end:time+1 });
+        gantt.push({ name: p.name, start: segStart, end: segEnd });
       }
-      if (p.burstLeft === p.burst) p.rt = time - p.arrival;
-      p.burstLeft--; time++;
-      if (p.burstLeft === 0) {
-        p.ct = time;
-        p.tat = p.ct - p.arrival;
-        p.wt = p.tat - p.burst;
-        completed++;
+      lastProc = p;
+      if (p.remaining === 0) {
+        p.completion = time;
+        finished++;
       }
-      last = p;
     }
+    return { gantt, procs };
   }
 
-  if (algo === "rr") {
-    let q = quantum || 2;
-    let queue = [];
-    let ready = [...procs].sort((a,b) => a.arrival - b.arrival);
-    let idx = 0, completed = 0;
-    while (completed < procs.length) {
-      while (idx < ready.length && ready[idx].arrival <= time) {
-        queue.push(ready[idx++]);
+  // Round Robin
+  function runRR(procs, quantum = 2) {
+    const gantt = [];
+    // prepare queue: sort by arrival
+    procs.forEach(p => { p.remaining = p.burst; p.completion = null; });
+    procs.sort(byArrival);
+    const q = [];
+    let time = 0;
+    let i = 0; // index for arrivals
+    while (true) {
+      // enqueue arrivals at current time
+      while (i < procs.length && procs[i].arrival <= time) {
+        q.push(Object.assign({}, procs[i]));
+        // but we should reference original to store completion, so keep original ref
+        // we'll manage by mapping names to originals later
+        i++;
       }
-      if (queue.length === 0) { time++; continue; }
-      let p = queue.shift();
-      let run = Math.min(q, p.burstLeft);
-      timeline.push({ id:p.id, start:time, end:time+run });
-      if (p.burstLeft === p.burst) p.rt = time - p.arrival;
-      p.burstLeft -= run; time += run;
-      while (idx < ready.length && ready[idx].arrival <= time) {
-        queue.push(ready[idx++]);
+      if (!q.length) {
+        if (i < procs.length) {
+          time = procs[i].arrival;
+          continue;
+        } else break;
       }
-      if (p.burstLeft > 0) queue.push(p);
-      else {
-        p.ct = time;
-        p.tat = p.ct - p.arrival;
-        p.wt = p.tat - p.burst;
-        completed++;
+      const cur = q.shift();
+      // find original process object to update completion
+      const orig = procs.find(p => p.name === cur.name && p.remaining === cur.remaining);
+      const run = Math.min(quantum, cur.remaining);
+      const start = time;
+      time += run;
+      const end = time;
+      // push segment; merge if same as last
+      if (gantt.length && gantt[gantt.length-1].name === cur.name) {
+        gantt[gantt.length-1].end = end;
+      } else {
+        gantt.push({ name: cur.name, start, end });
+      }
+      cur.remaining -= run;
+      // enqueue any arrivals that occurred during this time slice
+      while (i < procs.length && procs[i].arrival <= time) {
+        q.push(Object.assign({}, procs[i]));
+        i++;
+      }
+      if (cur.remaining > 0) {
+        // push back with updated remaining
+        q.push(cur);
+      } else {
+        // completed: set completion for original process with same name but careful if duplicate names exist
+        // find an original with no completion yet
+        const origUnfinished = procs.find(p => p.name === cur.name && (p.completion == null));
+        if (origUnfinished) origUnfinished.completion = end;
       }
     }
+    // fill completion for any remaining not set (should be set)
+    procs.forEach(p => { if (p.completion == null) p.completion = p.arrival; });
+    return { gantt, procs };
   }
 
-  if (algo === "priority") {
-    let completed = [];
-    while (completed.length < procs.length) {
-      let avail = procs.filter(p => !completed.includes(p) && p.arrival <= time);
-      if (avail.length === 0) { time++; continue; }
-      let p = avail.reduce((a,b) => a.priority < b.priority ? a : b);
-      timeline.push({ id:p.id, start:time, end:time+p.burst });
-      p.ct = time+p.burst;
-      p.tat = p.ct - p.arrival;
-      p.wt = p.tat - p.burst;
-      p.rt = p.wt;
-      time += p.burst;
-      completed.push(p);
+  // Priority non-preemptive (lower number = higher priority)
+  function runPriorityNonPreemptive(procs) {
+    const gantt = [];
+    const n = procs.length;
+    let time = 0;
+    procs.sort(byArrival);
+    while (procs.some(p => !p.done)) {
+      const ready = procs.filter(p => p.arrival <= time && !p.done);
+      if (!ready.length) {
+        const next = procs.find(p => !p.done);
+        time = Math.max(time, next.arrival);
+        continue;
+      }
+      ready.sort((a,b)=> a.priority - b.priority || a.arrival - b.arrival || (a.name>b.name?1:-1));
+      const p = ready[0];
+      p.done = true;
+      const start = time;
+      const end = time + p.burst;
+      gantt.push({ name: p.name, start, end });
+      p.completion = end;
+      time = end;
     }
+    return { gantt, procs };
   }
+// Reset button functionality
+document.getElementById("resetBtn").addEventListener("click", () => {
+  processes = []; // clear process list
+  document.getElementById("gantt").innerHTML = "";
+  document.getElementById("results").innerHTML = "";
+});
 
-  renderGantt(timeline);
-  renderStats(procs);
-}
+// Example drawGanttChart function with aligned markers
+function drawGanttChart(schedule) {
+  const gantt = document.getElementById("gantt");
+  const markers = document.getElementById("timeMarkers");
+  gantt.innerHTML = "";
+  markers.innerHTML = "";
 
-// Render Gantt
-// replace existing renderGantt/drawGanttChart with this
-function renderGantt(timeline) {
-  const ganttEl = document.getElementById('gantt');
-  const timeMarkersEl = document.getElementById('timeMarkers');
-  ganttEl.innerHTML = '';
-  timeMarkersEl.innerHTML = '';
+  schedule.forEach((slot, i) => {
+    // Gantt block
+    const block = document.createElement("div");
+    block.className = "gantt-block";
+    block.style.width = (slot.end - slot.start) * 50 + "px"; // scale
+    block.style.backgroundColor = getColor(slot.name);
+    block.innerText = slot.name;
+    gantt.appendChild(block);
 
-  if (!timeline || timeline.length === 0) return;
+    // Start time marker (aligned to block's left)
+    const start = document.createElement("span");
+    start.className = "time-marker";
+    start.style.width = (slot.end - slot.start) * 50 + "px"; // same width as block
+    start.innerText = slot.start;
+    markers.appendChild(start);
 
-  // compute scale so chart fits nicely
-  const start = Math.min(...timeline.map(s => s.start));
-  const end = Math.max(...timeline.map(s => s.end));
-  const total = Math.max(1, end - start);
-  const minPxPerUnit = 30;        // minimum px per time unit
-  const maxChartWidth = 1000;     // max width baseline
-  const scale = Math.max(minPxPerUnit, maxChartWidth / total);
-
-  // Build wrappers: each wrapper contains the colored bar + its time marker row
-  timeline.forEach((seg, idx) => {
-    const segWidth = Math.max(6, Math.round((seg.end - seg.start) * scale));
-
-    // wrapper: vertical stack (bar on top, marker below)
-    const wrapper = document.createElement('div');
-    wrapper.className = 'gantt-item';
-    wrapper.style.width = segWidth + 'px';
-    wrapper.style.display = 'inline-flex';
-    wrapper.style.flexDirection = 'column';
-    wrapper.style.alignItems = 'stretch';
-    wrapper.style.marginRight = '2px';
-
-    // bar (colored block)
-    const bar = document.createElement('div');
-    bar.className = `gantt-block ${seg.name.toLowerCase()}`;
-    bar.style.width = '100%';
-    bar.style.height = '44px';
-    bar.style.display = 'flex';
-    bar.style.alignItems = 'center';
-    bar.style.justifyContent = 'center';
-    bar.style.fontWeight = '700';
-    bar.style.color = '#042033';
-    bar.style.background = colorFor(seg.name);
-    bar.textContent = seg.name;
-    wrapper.appendChild(bar);
-
-    // marker row (relative positioned so we can place start & end inside)
-    const markerRow = document.createElement('div');
-    markerRow.className = 'gantt-marker-row';
-    markerRow.style.width = '100%';
-    markerRow.style.height = '20px';
-    markerRow.style.position = 'relative';
-    markerRow.style.fontSize = '12px';
-    markerRow.style.color = getComputedStyle(document.documentElement).getPropertyValue('--muted') || '#9fb0c8';
-
-    // start label (left)
-    const startLabel = document.createElement('span');
-    startLabel.className = 'marker-start';
-    startLabel.style.position = 'absolute';
-    startLabel.style.left = '4px';
-    startLabel.style.top = '0';
-    startLabel.textContent = seg.start;
-    markerRow.appendChild(startLabel);
-
-    // end label (only show on last segment so it aligns to the right edge)
-    if (idx === timeline.length - 1) {
-      const endLabel = document.createElement('span');
-      endLabel.className = 'marker-end';
-      endLabel.style.position = 'absolute';
-      endLabel.style.right = '4px';
-      endLabel.style.top = '0';
-      endLabel.textContent = seg.end;
-      markerRow.appendChild(endLabel);
+    // Last block → add end time marker at the right
+    if (i === schedule.length - 1) {
+      const end = document.createElement("span");
+      end.className = "time-marker end";
+      end.innerText = slot.end;
+      markers.appendChild(end);
     }
-
-    wrapper.appendChild(markerRow);
-    ganttEl.appendChild(wrapper);
-  });
-
-  // Optional: if you still want separate overall ticks (0,1,2...) you can generate them:
-  // (commented out — the per-bar markers above align more precisely)
-  // for (let t = start; t <= end; t++) {
-  //   const tick = document.createElement('div');
-  //   tick.className = 'time-tick';
-  //   tick.style.minWidth = Math.max(6, Math.round(scale)) + 'px';
-  //   tick.textContent = t;
-  //   timeMarkersEl.appendChild(tick);
-  // }
-}
-
-
-// Render stats
-function renderStats(procs) {
-  const wrap = document.getElementById("stats");
-  let avgCT=0, avgTAT=0, avgWT=0, avgRT=0;
-  wrap.innerHTML = `<table><tr>
-    <th>ID</th><th>AT</th><th>BT</th><th>P</th>
-    <th>CT</th><th>TAT</th><th>WT</th><th>RT</th></tr></table>`;
-  let tbl = wrap.querySelector("table");
-  procs.forEach(p => {
-    avgCT+=p.ct; avgTAT+=p.tat; avgWT+=p.wt; avgRT+=p.rt;
-    let row = tbl.insertRow();
-    row.innerHTML = `<td>${p.id}</td><td>${p.arrival}</td><td>${p.burst}</td>
-      <td>${p.priority}</td><td>${p.ct}</td><td>${p.tat}</td>
-      <td>${p.wt}</td><td>${p.rt}</td>`;
-  });
-  let n=procs.length;
-  let row = tbl.insertRow();
-  row.innerHTML = `<td colspan="4"><b>Average</b></td>
-    <td>${(avgCT/n).toFixed(2)}</td>
-    <td>${(avgTAT/n).toFixed(2)}</td>
-    <td>${(avgWT/n).toFixed(2)}</td>
-    <td>${(avgRT/n).toFixed(2)}</td>`;
-
-  // Chart.js
-  const ctx = document.getElementById("chartCanvas");
-  if (chartInstance) chartInstance.destroy();
-  chartInstance = new Chart(ctx, {
-    type: "bar",
-    data: {
-      labels: procs.map(p => p.id),
-      datasets: [
-        { label:"CT", data:procs.map(p=>p.ct), backgroundColor:"#60a5fa" },
-        { label:"TAT", data:procs.map(p=>p.tat), backgroundColor:"#7dd3fc" },
-        { label:"WT", data:procs.map(p=>p.wt), backgroundColor:"#fbbf24" },
-        { label:"RT", data:procs.map(p=>p.rt), backgroundColor:"#f87171" }
-      ]
-    },
-    options: { responsive:true, plugins:{ legend:{ position:"bottom" } } }
   });
 }
+
+
+  // init
+  renderProcs();
+  clearOutput();
+
+})();
