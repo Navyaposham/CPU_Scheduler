@@ -81,7 +81,18 @@
       </div>
       <div class="hint" style="margin-top:8px">Blocks are proportional to time. Timestamps appear at block boundaries.</div>
     </div>
-
+<div class="card">
+        <h2>Metrics</h2>
+        <div class="metrics" id="metrics">
+          <div class="kpi"><div class="mini">Avg Completion Time</div><div class="v" id="avgCT">—</div></div>
+          <div class="kpi"><div class="mini">Avg Turnaround Time</div><div class="v" id="avgTAT">—</div></div>
+          <div class="kpi"><div class="mini">Avg Waiting Time</div><div class="v" id="avgWT">—</div></div>
+          <div class="kpi"><div class="mini">Throughput (jobs/unit)</div><div class="v" id="throughput">—</div></div>
+        </div>
+        <div id="err" class="error" style="margin-top:8px"></div>
+        <div class="legend" id="legend" style="margin-top:12px"></div>
+      </div>
+    </div>
     <div class="card" style="margin-top:12px">
       <h2>Detailed Results</h2>
       <div style="overflow:auto">
@@ -104,18 +115,6 @@
       </div>
     </div>
   </div>
-<div class="card">
-        <h2>Metrics</h2>
-        <div class="metrics" id="metrics">
-          <div class="kpi"><div class="mini">Avg Completion Time</div><div class="v" id="avgCT">—</div></div>
-          <div class="kpi"><div class="mini">Avg Turnaround Time</div><div class="v" id="avgTAT">—</div></div>
-          <div class="kpi"><div class="mini">Avg Waiting Time</div><div class="v" id="avgWT">—</div></div>
-          <div class="kpi"><div class="mini">Throughput (jobs/unit)</div><div class="v" id="throughput">—</div></div>
-        </div>
-        <div id="err" class="error" style="margin-top:8px"></div>
-        <div class="legend" id="legend" style="margin-top:12px"></div>
-      </div>
-    </div>
 
 </body>
   <script src="script.js"></script>
