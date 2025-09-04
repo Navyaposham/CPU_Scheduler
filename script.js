@@ -393,34 +393,36 @@ document.getElementById("resetBtn").addEventListener("click", () => {
 // Example drawGanttChart function with aligned markers
 function drawGanttChart(schedule) {
   const gantt = document.getElementById("gantt");
+  const markers = document.getElementById("timeMarkers");
   gantt.innerHTML = "";
+  markers.innerHTML = "";
 
-  schedule.forEach((slot, index) => {
+  schedule.forEach((slot, i) => {
+    // Gantt block
     const block = document.createElement("div");
     block.className = "gantt-block";
-    block.style.width = (slot.end - slot.start) * 50 + "px"; // scale factor
-    block.innerHTML = `<div>${slot.name}</div>`;
+    block.style.width = (slot.end - slot.start) * 50 + "px"; // scale
+    block.style.backgroundColor = getColor(slot.name);
+    block.innerText = slot.name;
+    gantt.appendChild(block);
 
-    // Add start time
+    // Start time marker (aligned to block's left)
     const start = document.createElement("span");
     start.className = "time-marker";
+    start.style.width = (slot.end - slot.start) * 50 + "px"; // same width as block
     start.innerText = slot.start;
-    block.appendChild(start);
+    markers.appendChild(start);
 
-    // Add end time for the last block
-    if (index === schedule.length - 1) {
+    // Last block → add end time marker at the right
+    if (i === schedule.length - 1) {
       const end = document.createElement("span");
       end.className = "time-marker end";
       end.innerText = slot.end;
-      block.appendChild(end);
+      markers.appendChild(end);
     }
-
-    gantt.appendChild(block);
   });
 }
-
-
-   
+  
   // init
   renderProcs();
   clearOutput();
