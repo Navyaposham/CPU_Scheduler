@@ -1,75 +1,122 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>CPU Scheduling Simulator</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CPU Scheduling Visualizer</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>CPU Scheduling Simulator</h1>
+  <header>
+    <h1>CPU Scheduling Visualizer</h1>
+    <div class="sub">FCFS • SJF • Round Robin • Priority • SRTF</div>
+  </header>
 
-  <section id="input">
-    <h2>Input</h2>
-    <div class="controls">
-      <label>Algorithm:
-        <select id="algo">
-          <option value="FCFS">FCFS</option>
-          <option value="SJF">SJF</option>
-          <option value="SRTF">SRTF</option>
-          <option value="PR">Priority</option>
-          <option value="RR">Round Robin</option>
-        </select>
-      </label>
-      <label id="qField">Quantum: <input type="number" id="quantum" value="2" min="1"></label>
-      <label>Scale: <input type="range" id="scale" min="10" max="60" step="5" value="30"><span id="scaleLabel">30</span></label>
-      <button id="addRow">Add Process</button>
-      <button id="compute">Run</button>
-      <button id="seed">Seed Sample</button>
-      <button id="reset">Reset</button>
+  <div class="container">
+    <div class="card">
+      <div class="controls">
+        <div class="field">
+          <label>Algorithm</label>
+          <select id="algo">
+            <option value="FCFS">FCFS (First Come First Serve)</option>
+            <option value="SJF">SJF (Shortest Job First)</option>
+            <option value="RR">Round Robin (RRS)</option>
+            <option value="PR">Priority (Lower number = Higher priority)</option>
+            <option value="SRTF">SRTF (Shortest Remaining Time First)</option>
+          </select>
+        </div>
+        <div class="field" id="qField" style="display:none">
+          <label>Time Quantum (RR only)</label>
+          <input type="number" id="quantum" min="1" value="2" />
+        </div>
+        <div class="field">
+          <label>&nbsp;</label>
+          <button id="compute">Compute Schedule</button>
+        </div>
+        <div class="field">
+          <label>&nbsp;</label>
+          <button class="ghost" id="addRow">Add Process</button>
+        </div>
+        <div class="field">
+          <label>&nbsp;</label>
+          <button class="ghost" id="seed">Seed Sample</button>
+        </div>
+        <div class="field">
+          <label>&nbsp;</label>
+          <button class="ghost" id="reset">Reset</button>
+        </div>
+        <div class="tag">
+          <span class="mini">Scale:</span> <strong id="scaleLabel">20</strong><span class="mini">px/unit</span>
+          <input type="range" id="scale" min="8" max="40" value="20" style="width:160px; accent-color:#6aa6ff; margin-left:10px;"/>
+        </div>
+      </div>
     </div>
-  </section>
 
-  <section id="ptableSection">
-    <h2>Process Table</h2>
-    <table id="ptable">
-      <thead>
-        <tr>
-          <th>PID</th><th>Arrival</th><th>Burst</th><th>Priority</th><th>Color</th><th>Action</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </section>
+    <div class="grid" style="margin-top:12px">
+      <div class="card">
+        <h2>Processes</h2>
+        <div class="hint">Enter <strong>Arrival</strong>, <strong>Burst</strong>, and <strong>Priority</strong>.</div>
+        <div style="overflow:auto; max-height: 360px; margin-top:10px">
+          <table id="ptable">
+            <thead>
+              <tr>
+                <th>PID</th>
+                <th>Arrival</th>
+                <th>Burst</th>
+                <th>Priority</th>
+                <th>Color</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
 
-  <section id="results">
-    <h2>Statistics</h2>
-    <table id="rtable">
-      <thead>
-        <tr>
-          <th>PID</th><th>AT</th><th>BT</th><th>Prio</th>
-          <th>Start</th><th>CT</th><th>TAT</th><th>WT</th><th>Resp</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-
-    <div id="metrics">
-      <h3>Metrics</h3>
-      <p>Average Completion Time: <span id="avgCT">—</span></p>
-      <p>Average Turnaround Time: <span id="avgTAT">—</span></p>
-      <p>Average Waiting Time: <span id="avgWT">—</span></p>
-      <p>Throughput: <span id="throughput">—</span></p>
+      <div class="card">
+        <h2>Metrics</h2>
+        <div class="metrics" id="metrics">
+          <div class="kpi"><div class="mini">Avg Completion Time</div><div class="v" id="avgCT">—</div></div>
+          <div class="kpi"><div class="mini">Avg Turnaround Time</div><div class="v" id="avgTAT">—</div></div>
+          <div class="kpi"><div class="mini">Avg Waiting Time</div><div class="v" id="avgWT">—</div></div>
+          <div class="kpi"><div class="mini">Throughput (jobs/unit)</div><div class="v" id="throughput">—</div></div>
+        </div>
+        <div id="err" class="error" style="margin-top:8px"></div>
+        <div class="legend" id="legend" style="margin-top:12px"></div>
+      </div>
     </div>
-  </section>
 
-  <section id="visual">
-    <h2>Gantt Chart</h2>
-    <div id="legend"></div>
-    <div id="gantt"></div>
-    <div id="ticks"></div>
-  </section>
+    <div class="card" style="margin-top:12px">
+      <h2>Gantt Chart</h2>
+      <div class="gantt-wrap">
+        <div id="gantt" class="gantt"></div>
+        <div id="ticks" class="tickbar" style="margin-top:8px"></div>
+      </div>
+      <div class="hint" style="margin-top:8px">Blocks are proportional to time. Timestamps appear at block boundaries.</div>
+    </div>
 
-  <div id="err"></div>
+    <div class="card" style="margin-top:12px">
+      <h2>Statistics</h2>
+      <div style="overflow:auto">
+        <table id="rtable">
+          <thead>
+            <tr>
+              <th>PID</th>
+              <th>Arrival</th>
+              <th>Burst</th>
+              <th>Priority</th>
+              <th>Start</th>
+              <th>Completion (CT)</th>
+              <th>Turnaround (TAT)</th>
+              <th>Waiting (WT)</th>
+              <th>Response</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 
 </body>
   <script src="script.js"></script>
