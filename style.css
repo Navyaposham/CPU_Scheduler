@@ -113,16 +113,15 @@ button:hover{filter:brightness(1.05)}
 }
 
 /* Different process colors */
-.gantt-block.p1 { background: #60a5fa; }  /* Blue */
-.gantt-block.p2 { background: #34d399; }  /* Green */
-.gantt-block.p3 { background: #fbbf24; }  /* Amber */
-.gantt-block.p4 { background: #a78bfa; }  /* Purple */
-.gantt-block.p5 { background: #f87171; }  /* Red */
-.gantt-block.p6 { background: #22d3ee; }  /* Cyan */
-.gantt-block.p7 { background: #f472b6; }  /* Pink */
-.gantt-block.p8 { background: #4ade80; }  /* Light green */
-.gantt-block.p9 { background: #facc15; }  /* Yellow */
-.gantt-block.p10 { background: #c084fc; } /* Violet */
+.gantt-block {
+  border-radius: 6px;
+  text-align: center;
+  font-weight: bold;
+  margin-right: 2px;
+  color: #042033;
+  padding: 8px 0;
+}
+
 
 /* fallback if process id not in list */
 .gantt-block {
