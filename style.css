@@ -16,17 +16,6 @@ body{
   background: radial-gradient(1200px 600px at 20% -10%, #162045 0%, #0b1020 55%);
   color: var(--text);
 }
-#ptable {
-  table-layout: fixed;   /* lock the table layout */
-  width: 100%;           /* span full container width */
-}
-
-#ptable th, 
-#ptable td {
-  overflow: hidden;      /* cut off overflowing text */
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
 
 header{ padding: 28px 20px 10px; text-align:center }
 h1{margin:0 0 6px; font-size: clamp(20px, 3vw, 30px)}
