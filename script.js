@@ -90,13 +90,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const e = $('#err'); e.textContent = msg || '';
   }
 
-  // ---------- Scheduling Algorithms ----------
-  // (same as your original fcfs, sjf, srtf, prioritySchedule, roundRobin implementations)
-
-  // ... [keep all the scheduling functions you pasted earlier unchanged] ...
-
 // ---------- Scheduling Algorithms ----------
-// Each returns { blocks:[{pid,start,end,color}], results: Map(pid=>{start, completion, tat, wt, response}), endTime }
 
 // FCFS (First Come First Served)
 function fcfs(processes){
@@ -344,7 +338,6 @@ function roundRobin(processes, q){
       <td><input class="at" type="number" min="0" value="${at}"/></td>
       <td><input class="bt" type="number" min="1" value="${bt}"/></td>
       <td><input class="pr" type="number" value="${pr}"/></td>
-      <td><input class="color" type="text" value="${color}"/></td>
       <td class="row-actions"><button class="ghost del">Delete</button></td>
     `;
     tbody.appendChild(tr);
